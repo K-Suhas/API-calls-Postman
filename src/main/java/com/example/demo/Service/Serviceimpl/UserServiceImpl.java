@@ -1,6 +1,6 @@
-package com.example.demo.Serviceimpl;
+package com.example.demo.Service.Serviceimpl;
 
-import com.example.demo.Domain.User;
+import com.example.demo.DTO.UserDTO;
 import com.example.demo.Service.UserService;
 import org.springframework.stereotype.Service;
 
@@ -10,16 +10,16 @@ import java.util.List;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private List<User> users = new ArrayList<>();
+    private List<UserDTO> users = new ArrayList<>();
 
     @Override
-    public String createUser(User user) {
+    public String createUser(UserDTO user) {
         users.add(user);
         return "User created: " + user.getName();
     }
 
     @Override
-    public User getUserById(Long id) {
+    public UserDTO getUserById(Long id) {
         return users.stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst()
@@ -27,12 +27,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return users;
     }
 
     @Override
-    public String updateUser(Long id, User updatedUser) {
+    public String updateUser(Long id, UserDTO updatedUser) {
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getId().equals(id)) {
                 users.set(i, updatedUser);
