@@ -41,29 +41,44 @@ public class StudentServiceImpl implements StudentService {
                 .map(StudentMapper::toDTO)
                 .collect(Collectors.toList());
     }
+    private static final DateTimeFormatter[] SUPPORTED_FORMATS = new DateTimeFormatter[] {
+            DateTimeFormatter.ISO_LOCAL_DATE, // yyyy-MM-dd
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy")
+    };
+    private LocalDate parseDate(String input) {
+        try {
+            return LocalDate.parse(input, DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+
+
+
     @Override
     public List<StudentDTO> searchStudents(String query) {
         try {
             Long id = Long.parseLong(query);
-            return studentRepository
-                    .findByIdOrNameContainingIgnoreCaseOrDeptContainingIgnoreCase(id, query, query)
+            return studentRepository.searchByIdOrNameOrDept(id, query)
                     .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
         } catch (NumberFormatException e) {
-            // Try parsing as date
-            try {
-                LocalDate localDate = LocalDate.parse(query); // Accepts yyyy-MM-dd
-                Date dob = java.sql.Date.valueOf(localDate);
-                return studentRepository.findByDob(dob)
+            LocalDate dob = parseDate(query);
+            System.out.println("Parsed DOB: " + dob);
+
+            if (dob != null) {
+                return studentRepository.searchByDob(dob)
                         .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
-            } catch (Exception ex) {
-                // fallback to name/dept
-                return studentRepository
-                        .findByNameContainingIgnoreCaseOrDeptContainingIgnoreCase(query, query)
+            } else {
+                return studentRepository.searchByNameOrDept(query)
                         .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
             }
-
         }
     }
+
+
 
 
 
