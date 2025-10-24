@@ -32,6 +32,15 @@ public class StudentResource {
         }
         return ResponseEntity.ok(students);
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<StudentDTO>> searchStudents(@RequestParam String query) {
+        List<StudentDTO> results = studentService.searchStudents(query);
+        if (results.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(results);
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<StudentDTO> getstudentbyid(@PathVariable Long id) {
