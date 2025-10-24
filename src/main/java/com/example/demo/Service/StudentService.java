@@ -14,6 +14,8 @@ public interface StudentService  {
         List<StudentDTO> getallstudent();
         String updatestudent(Long id, StudentDTO student);
         String deletestudent(Long id);
+         List<StudentDTO> searchStudents(String query);
+
 
 
 }

@@ -8,6 +8,9 @@ import com.example.demo.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,31 @@ public class StudentServiceImpl implements StudentService {
                 .map(StudentMapper::toDTO)
                 .collect(Collectors.toList());
     }
+    @Override
+    public List<StudentDTO> searchStudents(String query) {
+        try {
+            Long id = Long.parseLong(query);
+            return studentRepository
+                    .findByIdOrNameContainingIgnoreCaseOrDeptContainingIgnoreCase(id, query, query)
+                    .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            // Try parsing as date
+            try {
+                LocalDate localDate = LocalDate.parse(query); // Accepts yyyy-MM-dd
+                Date dob = java.sql.Date.valueOf(localDate);
+                return studentRepository.findByDob(dob)
+                        .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+            } catch (Exception ex) {
+                // fallback to name/dept
+                return studentRepository
+                        .findByNameContainingIgnoreCaseOrDeptContainingIgnoreCase(query, query)
+                        .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+            }
+
+        }
+    }
+
+
 
     @Override
     public String updatestudent(Long id, StudentDTO student) {
