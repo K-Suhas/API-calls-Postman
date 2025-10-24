@@ -1,27 +1,25 @@
 package com.example.demo.Repository;
 
 import com.example.demo.Domain.StudentDomain;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
-import java.util.Date;
-import java.util.List;
 
 public interface StudentRepository extends JpaRepository<StudentDomain, Long> {
 
-    // Search by name or department (case-insensitive)
+    // Search by name or department (case-insensitive) with pagination
     @Query("SELECT s FROM StudentDomain s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.dept) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<StudentDomain> searchByNameOrDept(@Param("query") String query);
+    Page<StudentDomain> searchByNameOrDept(@Param("query") String query, Pageable pageable);
 
-    // Search by ID, name, or department
+    // Search by ID, name, or department with pagination
     @Query("SELECT s FROM StudentDomain s WHERE s.id = :id OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.dept) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<StudentDomain> searchByIdOrNameOrDept(@Param("id") Long id, @Param("query") String query);
+    Page<StudentDomain> searchByIdOrNameOrDept(@Param("id") Long id, @Param("query") String query, Pageable pageable);
 
-    // Search by date of birth
+    // Search by date of birth with pagination
     @Query(value = "SELECT * FROM Student WHERE DATE(dob) = :dob", nativeQuery = true)
-    List<StudentDomain> searchByDob(@Param("dob") LocalDate dob);
-
-
+    Page<StudentDomain> searchByDob(@Param("dob") LocalDate dob, Pageable pageable);
 }

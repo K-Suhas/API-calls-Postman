@@ -6,6 +6,8 @@ import com.example.demo.Mapper.StudentMapper;
 import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -36,11 +38,11 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<StudentDTO> getallstudent() {
-        return studentRepository.findAll().stream()
-                .map(StudentMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<StudentDTO> getallstudent(Pageable pageable) {
+        return studentRepository.findAll(pageable)
+                .map(StudentMapper::toDTO);
     }
+
     private static final DateTimeFormatter[] SUPPORTED_FORMATS = new DateTimeFormatter[] {
             DateTimeFormatter.ISO_LOCAL_DATE, // yyyy-MM-dd
             DateTimeFormatter.ofPattern("dd-MM-yyyy"),
@@ -59,21 +61,19 @@ public class StudentServiceImpl implements StudentService {
 
 
     @Override
-    public List<StudentDTO> searchStudents(String query) {
+    public Page<StudentDTO> searchStudents(String query, Pageable pageable) {
         try {
             Long id = Long.parseLong(query);
-            return studentRepository.searchByIdOrNameOrDept(id, query)
-                    .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+            return studentRepository.searchByIdOrNameOrDept(id, query, pageable)
+                    .map(StudentMapper::toDTO);
         } catch (NumberFormatException e) {
             LocalDate dob = parseDate(query);
-            System.out.println("Parsed DOB: " + dob);
-
             if (dob != null) {
-                return studentRepository.searchByDob(dob)
-                        .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+                return studentRepository.searchByDob(dob, pageable)
+                        .map(StudentMapper::toDTO);
             } else {
-                return studentRepository.searchByNameOrDept(query)
-                        .stream().map(StudentMapper::toDTO).collect(Collectors.toList());
+                return studentRepository.searchByNameOrDept(query, pageable)
+                        .map(StudentMapper::toDTO);
             }
         }
     }
