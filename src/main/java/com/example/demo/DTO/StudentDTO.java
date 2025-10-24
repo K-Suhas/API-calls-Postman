@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -17,5 +18,5 @@ public class StudentDTO {
     private String dept;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date dob;
+    private LocalDate dob;
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
 
+import java.time.LocalDate;
 import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,5 +27,5 @@ public class StudentDomain {
 
         @Temporal(TemporalType.DATE)
         @Column(name = "dob", nullable = false)
-        private Date dob;
+        private LocalDate dob;
 }
