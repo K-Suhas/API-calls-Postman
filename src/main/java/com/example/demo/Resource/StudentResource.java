@@ -22,56 +22,48 @@ public class StudentResource {
 
     @PostMapping
     public ResponseEntity<String> createstudent(@RequestBody StudentDTO student) {
-        String result = studentService.createstudent(student);
+        String result = studentService.createstudent(student); // let exception propagate
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
     @GetMapping
     public ResponseEntity<Page<StudentDTO>> getAllStudents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<StudentDTO> students = studentService.getallstudent(PageRequest.of(page, size));
-        if (students.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
+        Page<StudentDTO> students = studentService.getallstudent(PageRequest.of(page, size)); // throws if empty
         return ResponseEntity.ok(students);
     }
+
 
     @GetMapping("/search")
     public ResponseEntity<Page<StudentDTO>> searchStudents(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<StudentDTO> results = studentService.searchStudents(query, PageRequest.of(page, size));
-        if (results.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
+        Page<StudentDTO> results = studentService.searchStudents(query, PageRequest.of(page, size)); // throws if empty
         return ResponseEntity.ok(results);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
-        StudentDTO student = studentService.getstudentbyid(id);
-        return student != null ? ResponseEntity.ok(student) : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        StudentDTO student = studentService.getstudentbyid(id); // throws if not found
+        return ResponseEntity.ok(student);
     }
+
+
+
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updatestudent(@PathVariable Long id, @RequestBody StudentDTO student) {
-        String result = studentService.updatestudent(id, student);
-        if (result.startsWith("Student updated")) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
-        }
+    public ResponseEntity<String> updateStudent(@PathVariable Long id, @RequestBody StudentDTO student) {
+        String result = studentService.updatestudent(id, student); // let exception propagate
+        return ResponseEntity.ok(result);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletestudent(@PathVariable Long id) {
-        String result = studentService.deletestudent(id);
-        if (result.startsWith("Student deleted")) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
-        }
+        String result = studentService.deletestudent(id); // throws if not found
+        return ResponseEntity.ok(result);
     }
+
 }
