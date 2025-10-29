@@ -5,7 +5,11 @@ import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
-import java.util.Date;
+
+import java.util.HashSet;
+
+import java.util.Set;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -28,4 +32,12 @@ public class StudentDomain {
         @Temporal(TemporalType.DATE)
         @Column(name = "dob", nullable = false)
         private LocalDate dob;
+        @ManyToMany
+        @JoinTable(
+            name = "student_course",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id")
+        )
+        private Set<CourseDomain> courses = new HashSet<>();
+
 }
