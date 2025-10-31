@@ -49,16 +49,11 @@ public class StudentResource {
         return ResponseEntity.ok(student);
     }
 
-
-
-
-
     @PutMapping("/{id}")
     public ResponseEntity<String> updateStudent(@PathVariable Long id, @RequestBody StudentDTO student) {
         String result = studentService.updatestudent(id, student); // let exception propagate
         return ResponseEntity.ok(result);
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletestudent(@PathVariable Long id) {

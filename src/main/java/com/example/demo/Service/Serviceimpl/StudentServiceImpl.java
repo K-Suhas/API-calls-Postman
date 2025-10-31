@@ -34,10 +34,8 @@ public class StudentServiceImpl implements StudentService {
         );
 
         if (!matches.isEmpty()) {
-            System.out.println("Throwing Duplicate error");
             throw new DuplicateResourceException("Student already exists with same name, DOB, and department");
         }
-
 
         StudentDomain domain = StudentMapper.toDomain(student);
 
@@ -118,7 +116,6 @@ public class StudentServiceImpl implements StudentService {
             throw new DuplicateResourceException("Another student already exists with same name, DOB, and department");
         }
 
-
         existing.setName(student.getName());
         existing.setDept(student.getDept());
         existing.setDob(student.getDob());
@@ -150,3 +147,4 @@ public class StudentServiceImpl implements StudentService {
         return "Student deleted: " + existing.getName();
     }
 }
+
