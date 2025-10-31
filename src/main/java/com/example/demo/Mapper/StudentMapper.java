@@ -26,7 +26,6 @@ public class StudentMapper {
         return dto;
     }
 
-
     public static StudentDomain toDomain(StudentDTO dto) {
         if (dto == null) return null;
 
