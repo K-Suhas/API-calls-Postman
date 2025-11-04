@@ -1,5 +1,6 @@
 package com.example.demo.Resource;
 
+import com.example.demo.DTO.BulkStudentDTO;
 import com.example.demo.DTO.StudentDTO;
 import com.example.demo.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/student")
@@ -60,5 +62,15 @@ public class StudentResource {
         String result = studentService.deletestudent(id); // throws if not found
         return ResponseEntity.ok(result);
     }
+    @PostMapping("/bulk")
+    public ResponseEntity<?> addstudentsInBulk(@RequestBody BulkStudentDTO bulkDto) {
+        List<String> errors = studentService.addStudentsInBulk(bulkDto);
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest().body(errors);
+        }
+        return ResponseEntity.ok(Map.of("message", "Students uploaded successfully"));
+    }
+
+
 
 }
