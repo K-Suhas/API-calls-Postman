@@ -23,5 +23,8 @@ public interface StudentRepository extends JpaRepository<StudentDomain, Long> {
     Page<StudentDomain> searchByDob(@Param("dob") LocalDate dob, Pageable pageable);
 
     List<StudentDomain> findByNameAndDobAndDept(String name, LocalDate dob, String dept);
+    @Query("SELECT s FROM StudentDomain s WHERE s.name = :name AND s.dob = :dob AND s.dept = :dept")
+    Optional<StudentDomain> findExistingStudent(@Param("name") String name, @Param("dob") LocalDate dob, @Param("dept") String dept);
+
 
 }

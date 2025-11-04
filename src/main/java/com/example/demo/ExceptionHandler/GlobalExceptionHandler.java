@@ -7,6 +7,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.List;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -37,5 +39,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUnreadableJson(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid JSON input: " + ex.getMessage());
     }
+    @ExceptionHandler(BulkValidationException.class)
+    public ResponseEntity<List<String>> handleBulkValidation(BulkValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getErrors());
+    }
+
 
 }

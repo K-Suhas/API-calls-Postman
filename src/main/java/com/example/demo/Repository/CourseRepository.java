@@ -20,6 +20,8 @@ public interface CourseRepository extends JpaRepository<CourseDomain, Long> {
     Page<CourseDomain> searchByName(@Param("query") String query, Pageable pageable);
 
     List<CourseDomain> findByNameIgnoreCase(String name);
+    List<CourseDomain> findByNameInIgnoreCase(List<String> names);
+
 
 
 }

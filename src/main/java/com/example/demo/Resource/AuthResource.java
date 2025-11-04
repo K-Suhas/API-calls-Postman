@@ -32,7 +32,7 @@ public class AuthResource {
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(), new JacksonFactory())
-                .setAudience(Collections.singletonList(clientId))
+                .setAudience(Collections.singletonList( clientId))
                 .build();
 
         GoogleIdToken idToken = verifier.verify(token);

@@ -1,8 +1,10 @@
 package com.example.demo.Service.Serviceimpl;
 
+import com.example.demo.DTO.BulkStudentDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.StudentDomain;
 import com.example.demo.DTO.StudentDTO;
+import com.example.demo.ExceptionHandler.BulkValidationException;
 import com.example.demo.ExceptionHandler.DuplicateResourceException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Mapper.StudentMapper;
@@ -146,5 +148,49 @@ public class StudentServiceImpl implements StudentService {
         studentRepository.delete(existing);
         return "Student deleted: " + existing.getName();
     }
+    @Override
+    public List<String> addStudentsInBulk(BulkStudentDTO bulkDto) {
+        List<String> errors = new ArrayList<>();
+
+        for (int i = 0; i < bulkDto.getStudents().size(); i++) {
+            StudentDTO dto = bulkDto.getStudents().get(i);
+            List<String> rowErrors = new ArrayList<>();
+
+            if (dto.getName() == null || dto.getName().isBlank()) rowErrors.add("Missing name");
+            if (dto.getDob() == null) rowErrors.add("Missing DOB");
+            if (dto.getDept() == null || dto.getDept().isBlank()) rowErrors.add("Missing department");
+            if (dto.getCourseNames() == null || dto.getCourseNames().isEmpty()) rowErrors.add("Missing course names");
+
+            // ✅ Duplicate check
+            boolean exists = studentRepository.findExistingStudent(dto.getName(), dto.getDob(), dto.getDept()).isPresent();
+            if (exists) rowErrors.add("Duplicate student");
+
+            if (!rowErrors.isEmpty()) {
+                errors.add("Row " + (i + 1) + ": " + String.join(", ", rowErrors));
+                continue;
+            }
+
+            List<CourseDomain> courses = courseRepository.findByNameInIgnoreCase(dto.getCourseNames());
+            if (courses.size() != dto.getCourseNames().size()) {
+                List<String> missing = new ArrayList<>(dto.getCourseNames());
+                missing.removeAll(courses.stream().map(CourseDomain::getName).toList());
+                rowErrors.add("Invalid course names: " + String.join(", ", missing));
+                errors.add("Row " + (i + 1) + ": " + String.join(", ", rowErrors));
+                continue;
+            }
+
+            StudentDomain student = StudentMapper.toDomain(dto, courses);
+            studentRepository.save(student);
+        }
+
+        if (!errors.isEmpty()) throw new BulkValidationException(errors);
+        return errors;
+    }
+
 }
+
+
+
+
+
 

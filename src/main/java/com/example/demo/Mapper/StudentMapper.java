@@ -4,6 +4,8 @@ import com.example.demo.DTO.StudentDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.StudentDomain;
 
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StudentMapper {
@@ -26,7 +28,7 @@ public class StudentMapper {
         return dto;
     }
 
-    public static StudentDomain toDomain(StudentDTO dto) {
+    public static StudentDomain toDomain(StudentDTO dto, List<CourseDomain> courses) {
         if (dto == null) return null;
 
         StudentDomain domain = new StudentDomain();
@@ -35,6 +37,15 @@ public class StudentMapper {
         domain.setDept(dto.getDept());
         domain.setDob(dto.getDob());
 
+        if (courses != null) {
+            domain.setCourses(Set.copyOf(courses));
+        }
+
         return domain;
     }
+
+    public static StudentDomain toDomain(StudentDTO dto) {
+        return toDomain(dto, null);
+    }
 }
+
