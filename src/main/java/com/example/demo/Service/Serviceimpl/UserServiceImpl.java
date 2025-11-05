@@ -2,6 +2,7 @@ package com.example.demo.Service.Serviceimpl;
 
 import com.example.demo.DTO.UserDTO;
 import com.example.demo.Domain.UserDomain;
+import com.example.demo.Enum.Role;
 import com.example.demo.Mapper.UserMapper;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.UserService;
@@ -24,16 +25,24 @@ public class UserServiceImpl implements UserService {
             UserDomain newUser = new UserDomain();
             newUser.setEmail(email);
             newUser.setName(name);
+            newUser.setRole(Role.STUDENT); // ✅ Assign default role
             return userRepository.save(newUser);
         });
 
         return UserMapper.toDTO(user);
     }
 
+
     @Override
     public Optional<UserDTO> findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .map(UserMapper::toDTO);
+    }
+    @Override
+    public Role getUserRole(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserDomain::getRole)
+                .orElse(Role.STUDENT);
     }
 }
 
