@@ -1,5 +1,6 @@
 package com.example.demo.Domain;
 
+import com.example.demo.Enum.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,6 +16,8 @@ import lombok.experimental.Accessors;
 @Entity
 @Table(name = "User")
 public class UserDomain {
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,5 +27,8 @@ public class UserDomain {
 
     @Column(name = "name", nullable = false)
     private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role = Role.STUDENT; // default role
 }
 

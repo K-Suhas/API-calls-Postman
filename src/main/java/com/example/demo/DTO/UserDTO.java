@@ -1,5 +1,7 @@
 package com.example.demo.DTO;
 
+import com.example.demo.Domain.UserDomain;
+import com.example.demo.Enum.Role;
 import lombok.*;
 
 @Getter
@@ -10,5 +12,7 @@ public class UserDTO {
     private Long id;
     private String name;
     private String email;
+    private Role role;
+
 }
 
