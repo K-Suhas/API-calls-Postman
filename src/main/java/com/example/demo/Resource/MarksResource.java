@@ -1,9 +1,6 @@
 package com.example.demo.Resource;
 
-import com.example.demo.DTO.MarksDTO;
-import com.example.demo.DTO.MarksEntryRequestDTO;
-import com.example.demo.DTO.MarksResponseDTO;
-import com.example.demo.DTO.StudentMarksSummaryDTO;
+import com.example.demo.DTO.*;
 import com.example.demo.ExceptionHandler.DuplicateResourceException;
 import com.example.demo.ExceptionHandler.InvalidMarksException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
@@ -14,6 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/marks")
@@ -72,5 +71,10 @@ public class MarksResource {
         Page<StudentMarksSummaryDTO> result = marksService.getPaginatedStudentSummary(pageable);
         return ResponseEntity.ok(result);
     }
+    @GetMapping("/distribution")
+    public ResponseEntity<Map<String, PercentageGroupDTO>> getPercentageDistribution() {
+        return ResponseEntity.ok(marksService.getPercentageDistribution());
+    }
+
 
 }

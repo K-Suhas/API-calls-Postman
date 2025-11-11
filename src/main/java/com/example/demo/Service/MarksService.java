@@ -1,11 +1,10 @@
 package com.example.demo.Service;
 
-import com.example.demo.DTO.MarksDTO;
-import com.example.demo.DTO.MarksEntryRequestDTO;
-import com.example.demo.DTO.MarksResponseDTO;
-import com.example.demo.DTO.StudentMarksSummaryDTO;
+import com.example.demo.DTO.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.Map;
 
 public interface MarksService {
 
@@ -14,4 +13,6 @@ public interface MarksService {
     void updateMarks(Long studentId, int semester, String subjectName, int newMarks);
     Page<StudentMarksSummaryDTO> getPaginatedStudentSummary(Pageable pageable);
     void deleteAllMarks(Long studentId, int semester);
+    Map<String, PercentageGroupDTO> getPercentageDistribution();
+
 }

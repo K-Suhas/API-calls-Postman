@@ -16,7 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -115,6 +117,25 @@ public class MarksServiceImpl implements MarksService {
     public Page<StudentMarksSummaryDTO> getPaginatedStudentSummary(Pageable pageable) {
         Page<StudentMarksProjection> rawPage = marksRepository.getStudentTotals(pageable);
         return rawPage.map(p -> new StudentMarksSummaryDTO(p.getStudentId(), p.getName(), p.getTotal(), p.getCount()));
+    }
+    @Override
+    public Map<String, PercentageGroupDTO> getPercentageDistribution() {
+        List<StudentMarksProjection> raw = marksRepository.getStudentTotals();
+
+        Map<String, List<StudentInfoDTO>> grouped = raw.stream()
+                .collect(Collectors.groupingBy(p -> {
+                    double percentage = p.getCount() > 0 ? p.getTotal() / (p.getCount() * 1.0) : 0.0;
+                    if (percentage <= 35) return "0-35%";
+                    else if (percentage <= 50) return "36-50%";
+                    else if (percentage <= 75) return "51-75%";
+                    else return "76-100%";
+                }, Collectors.mapping(p -> new StudentInfoDTO(p.getStudentId(), p.getName()), Collectors.toList())));
+
+        return grouped.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> new PercentageGroupDTO(e.getValue().size(), e.getValue())
+                ));
     }
 
 }
