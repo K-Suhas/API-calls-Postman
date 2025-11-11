@@ -71,6 +71,4 @@ public class StudentResource {
         return ResponseEntity.ok(Map.of("message", "Students uploaded successfully"));
     }
 
-
-
 }

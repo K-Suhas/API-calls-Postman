@@ -9,7 +9,13 @@ import com.example.demo.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Optional;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -30,6 +36,30 @@ public class UserServiceImpl implements UserService {
         });
 
         return UserMapper.toDTO(user);
+    }
+    @Value("${google.clientId}")
+    private String clientId;
+    @Override
+    public UserDTO authenticateWithGoogle(String idTokenString) {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(),
+                JacksonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(clientId))
+                .build();
+
+        try {
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken != null) {
+                GoogleIdToken.Payload tokenPayload = idToken.getPayload();
+                String email = tokenPayload.getEmail();
+                String name = (String) tokenPayload.get("name");
+
+                return loginOrRegisterGoogleUser(email, name);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 

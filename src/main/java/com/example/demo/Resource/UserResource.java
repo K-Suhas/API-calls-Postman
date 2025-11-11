@@ -24,27 +24,12 @@ public class UserResource {
     @Autowired
     private UserService userService;
 
-    @Value("${google.clientId}")
-    private String clientId;
-
     @PostMapping("/google")
     public ResponseEntity<UserDTO> loginWithGoogle(@RequestBody Map<String, String> payload) {
         String idTokenString = payload.get("idToken");
-
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(),
-                JacksonFactory.getDefaultInstance())
-                .setAudience(Collections.singletonList(clientId))
-                .build();
-
         try {
-            GoogleIdToken idToken = verifier.verify(idTokenString);
-            if (idToken != null) {
-                GoogleIdToken.Payload tokenPayload = idToken.getPayload();
-                String email = tokenPayload.getEmail();
-                String name = (String) tokenPayload.get("name");
-
-                UserDTO user = userService.loginOrRegisterGoogleUser(email, name);
+            UserDTO user = userService.authenticateWithGoogle(idTokenString);
+            if (user != null) {
                 return ResponseEntity.ok(user);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -53,6 +38,7 @@ public class UserResource {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     @GetMapping("/role")
     public ResponseEntity<Role> getRole(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserRole(email));

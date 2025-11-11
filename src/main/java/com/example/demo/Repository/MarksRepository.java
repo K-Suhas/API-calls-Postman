@@ -19,6 +19,10 @@ public interface MarksRepository extends JpaRepository<MarksDomain, Long> {
     @Query("SELECT m.student.id AS studentId, m.student.name AS name, SUM(m.marksObtained) AS total, COUNT(m) AS count " +
             "FROM MarksDomain m GROUP BY m.student.id, m.student.name")
     Page<StudentMarksProjection> getStudentTotals(Pageable pageable);
+    @Query("SELECT m.student.id AS studentId, m.student.name AS name, SUM(m.marksObtained) AS total, COUNT(m) AS count " +
+            "FROM MarksDomain m GROUP BY m.student.id, m.student.name")
+    List<StudentMarksProjection> getStudentTotals(); // ✅ For distribution
+
 
 
     // ✅ For duplicate check (single result)
