@@ -24,6 +24,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
+    @ExceptionHandler(EmailFailedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailSendFailed(EmailFailedException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "Email sending failed: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmailNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEmailNotFound(EmailNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                        "Email record not found: " + ex.getMessage()));
+    }
+
 
     @ExceptionHandler(InvalidMarksException.class)
     public ResponseEntity<ErrorResponse> handleInvalidMarks(InvalidMarksException ex) {

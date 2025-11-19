@@ -16,6 +16,8 @@ public class StudentDTO {
     private Long id;
     private String name;
     private String dept;
+    private String email;
+
     private List<String> courseNames;
 
 

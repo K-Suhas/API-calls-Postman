@@ -18,6 +18,7 @@ public class StudentMapper {
         dto.setName(domain.getName());
         dto.setDept(domain.getDept());
         dto.setDob(domain.getDob());
+        dto.setEmail(domain.getEmail());
 
         if (domain.getCourses() != null) {
             dto.setCourseNames(domain.getCourses().stream()
@@ -36,6 +37,7 @@ public class StudentMapper {
         domain.setName(dto.getName());
         domain.setDept(dto.getDept());
         domain.setDob(dto.getDob());
+        domain.setEmail(dto.getEmail());
 
         if (courses != null) {
             domain.setCourses(Set.copyOf(courses));

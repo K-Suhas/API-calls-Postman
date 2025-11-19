@@ -29,6 +29,10 @@ public class StudentDomain {
     @Column(name = "dob", nullable = false)
     private LocalDate dob;
 
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+
     @ManyToMany
     @JoinTable(
             name = "student_course",

@@ -40,6 +40,7 @@ public class StudentServiceImpl implements StudentService {
         }
 
         StudentDomain domain = StudentMapper.toDomain(student);
+        domain.setEmail(student.getEmail());
 
         if (student.getCourseNames() != null && !student.getCourseNames().isEmpty()) {
             List<CourseDomain> courses = courseRepository.findAll().stream()
@@ -121,6 +122,7 @@ public class StudentServiceImpl implements StudentService {
         existing.setName(student.getName());
         existing.setDept(student.getDept());
         existing.setDob(student.getDob());
+        existing.setEmail(student.getEmail());
 
         if (student.getCourseNames() != null && !student.getCourseNames().isEmpty()) {
             List<CourseDomain> matched = courseRepository.findAll().stream()
@@ -160,10 +162,16 @@ public class StudentServiceImpl implements StudentService {
             if (dto.getDob() == null) rowErrors.add("Missing DOB");
             if (dto.getDept() == null || dto.getDept().isBlank()) rowErrors.add("Missing department");
             if (dto.getCourseNames() == null || dto.getCourseNames().isEmpty()) rowErrors.add("Missing course names");
+            if (dto.getEmail() == null || dto.getEmail().isBlank()) rowErrors.add("Missing email");
+            else if (!dto.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) rowErrors.add("Invalid email format");
 
-            // ✅ Duplicate check
+            // ✅ Duplicate check (name+dob+dept)
             boolean exists = studentRepository.findExistingStudent(dto.getName(), dto.getDob(), dto.getDept()).isPresent();
             if (exists) rowErrors.add("Duplicate student");
+
+            // ✅ Duplicate email check
+            boolean emailExists = studentRepository.findByEmail(dto.getEmail()).isPresent();
+            if (emailExists) rowErrors.add("Duplicate email");
 
             if (!rowErrors.isEmpty()) {
                 errors.add("Row " + (i + 1) + ": " + String.join(", ", rowErrors));
@@ -180,12 +188,14 @@ public class StudentServiceImpl implements StudentService {
             }
 
             StudentDomain student = StudentMapper.toDomain(dto, courses);
+            student.setEmail(dto.getEmail()); // ✅ Persist email
             studentRepository.save(student);
         }
 
         if (!errors.isEmpty()) throw new BulkValidationException(errors);
         return errors;
     }
+
 
 }
 

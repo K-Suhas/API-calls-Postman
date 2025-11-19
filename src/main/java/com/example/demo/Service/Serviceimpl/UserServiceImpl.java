@@ -16,31 +16,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Value;
-
 @Service
 public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
 
-    @Override
-    public UserDTO loginOrRegisterGoogleUser(String email, String name) {
-        Optional<UserDomain> existing = userRepository.findByEmail(email);
-
-        UserDomain user = existing.orElseGet(() -> {
-            UserDomain newUser = new UserDomain();
-            newUser.setEmail(email);
-            newUser.setName(name);
-            newUser.setRole(Role.STUDENT); // ✅ Assign default role
-            return userRepository.save(newUser);
-        });
-
-        return UserMapper.toDTO(user);
-    }
     @Value("${google.clientId}")
     private String clientId;
+
     @Override
     public UserDTO authenticateWithGoogle(String idTokenString) {
+        System.out.println(idTokenString);
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
                 JacksonFactory.getDefaultInstance())
@@ -50,10 +37,9 @@ public class UserServiceImpl implements UserService {
         try {
             GoogleIdToken idToken = verifier.verify(idTokenString);
             if (idToken != null) {
-                GoogleIdToken.Payload tokenPayload = idToken.getPayload();
-                String email = tokenPayload.getEmail();
-                String name = (String) tokenPayload.get("name");
-
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
                 return loginOrRegisterGoogleUser(email, name);
             }
         } catch (Exception e) {
@@ -62,17 +48,33 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-
     @Override
-    public Optional<UserDTO> findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(UserMapper::toDTO);
+    public UserDTO loginOrRegisterGoogleUser(String email, String name) {
+        Optional<UserDomain> existing = userRepository.findByEmail(email);
+        UserDomain user = existing.orElseGet(() -> {
+            UserDomain newUser = new UserDomain();
+            newUser.setEmail(email);
+            newUser.setName(name);
+            newUser.setRole(Role.STUDENT);
+            return userRepository.save(newUser);
+        });
+        return UserMapper.toDTO(user);
     }
+
     @Override
     public Role getUserRole(String email) {
         return userRepository.findByEmail(email)
                 .map(UserDomain::getRole)
                 .orElse(Role.STUDENT);
     }
+
+    // ✅ Added missing method
+    @Override
+    public Optional<UserDTO> findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserMapper::toDTO);
+    }
 }
+
+
 

@@ -43,5 +43,4 @@ public class UserResource {
     public ResponseEntity<Role> getRole(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserRole(email));
     }
-
 }

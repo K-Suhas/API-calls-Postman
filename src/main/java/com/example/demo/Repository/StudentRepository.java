@@ -21,6 +21,8 @@ public interface StudentRepository extends JpaRepository<StudentDomain, Long> {
 
     @Query(value = "SELECT * FROM Student WHERE DATE(dob) = :dob", nativeQuery = true)
     Page<StudentDomain> searchByDob(@Param("dob") LocalDate dob, Pageable pageable);
+    Optional<StudentDomain> findByEmail(String email);
+
 
     List<StudentDomain> findByNameAndDobAndDept(String name, LocalDate dob, String dept);
     @Query("SELECT s FROM StudentDomain s WHERE s.name = :name AND s.dob = :dob AND s.dept = :dept")
