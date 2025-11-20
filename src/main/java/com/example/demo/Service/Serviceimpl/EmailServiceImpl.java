@@ -2,9 +2,12 @@ package com.example.demo.Service.Serviceimpl;
 
 import com.example.demo.DTO.EmailDTO;
 import com.example.demo.Domain.EmailDomain;
+import com.example.demo.Domain.StudentDomain;
 import com.example.demo.Enum.EmailStatus;
+import com.example.demo.ExceptionHandler.DuplicateEmailException;
 import com.example.demo.ExceptionHandler.EmailFailedException;
 import com.example.demo.ExceptionHandler.EmailNotFoundException;
+import com.example.demo.ExceptionHandler.MailGatewayException;
 import com.example.demo.Mail.GmailOAuth2Sender;
 import com.example.demo.Repository.EmailRepository;
 import com.example.demo.Repository.StudentRepository;
@@ -34,27 +37,22 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public EmailDTO sendEmail(String toEmail, String subject, String body) {
-        // ✅ Check if student exists
         studentRepository.findByEmail(toEmail)
-                .orElseThrow(() -> new EmailFailedException(
-                        "No student found with email: " + toEmail
-                ));
+                .orElseThrow(() -> new EmailNotFoundException("No student found with email: " + toEmail));
 
-        // ✅ Check if already sent
         boolean alreadySent = repository.existsByToEmailAndSubjectAndBodyAndStatus(
                 toEmail, subject, body, EmailStatus.SENT);
 
         if (alreadySent) {
-            throw new EmailFailedException(
-                    "Email already sent to " + toEmail + " with same subject and body"
-            );
+            throw new DuplicateEmailException("Email already sent to " + toEmail + " with same subject and body");
         }
 
-        EmailDomain notification = new EmailDomain();
-        notification.setToEmail(toEmail);
-        notification.setSubject(subject);
-        notification.setBody(body);
-        notification.setStatus(EmailStatus.PENDING);
+        EmailDomain notification = new EmailDomain()
+                .setToEmail(toEmail)
+                .setSubject(subject)
+                .setBody(body)
+                .setStatus(EmailStatus.PENDING);
+
         notification = repository.save(notification);
 
         try {
@@ -66,12 +64,14 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception e) {
             notification.setStatus(EmailStatus.FAILED);
             notification.setSentTime(LocalDateTime.now());
-            throw new EmailFailedException("Failed to send email: " + e.getMessage());
+            repository.save(notification);
+            throw new MailGatewayException("Failed to send via SMTP: " + e.getMessage());
         }
 
         repository.save(notification);
         return mapToDTO(notification);
     }
+
 
 
 
@@ -94,5 +94,31 @@ public class EmailServiceImpl implements EmailService {
                 entity.getSentTime()
         );
     }
+    @Override
+    public List<EmailDTO> sendEmailToAll(String subject, String body) {
+        List<StudentDomain> students = studentRepository.findAll();
+        if (students.isEmpty()) {
+            throw new EmailFailedException("No students found to send email");
+        }
+
+        // Strict duplicate guard (pre-check)
+        for (StudentDomain student : students) {
+            boolean alreadySent = repository.existsByToEmailAndSubjectAndBodyAndStatus(
+                    student.getEmail(), subject, body, EmailStatus.SENT);
+            if (alreadySent) {
+                throw new DuplicateEmailException(
+                        "Duplicate detected before send: already sent to " + student.getEmail()
+                );
+            }
+        }
+
+        // Fail-fast (first failure aborts)
+        return students.stream()
+                .map(s -> sendEmail(s.getEmail(), subject, body)) // exceptions propagate
+                .collect(Collectors.toList());
+    }
+
+
+
 }
 

@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/email")
@@ -28,4 +30,13 @@ public class EmailResource {
     public ResponseEntity<List<EmailDTO>> getAllStatuses() {
         return ResponseEntity.ok(emailService.getAllNotifications());
     }
+    @PostMapping("/sendAll")
+    public ResponseEntity<List<EmailDTO>> sendEmailToAll(@RequestParam String subject,
+                                                         @RequestParam String body) {
+        List<EmailDTO> results = emailService.sendEmailToAll(subject, body);
+        return ResponseEntity.ok(results);
+    }
+
+
+
 }

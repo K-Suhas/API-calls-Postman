@@ -7,4 +7,5 @@ import java.util.List;
 public interface EmailService {
     EmailDTO sendEmail(String toEmail, String subject, String body);
     List<EmailDTO> getAllNotifications();
+    List<EmailDTO> sendEmailToAll(String subject, String body);
 }

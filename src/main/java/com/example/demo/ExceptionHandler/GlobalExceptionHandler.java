@@ -24,20 +24,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
-    @ExceptionHandler(EmailFailedException.class)
-    public ResponseEntity<ErrorResponse> handleEmailSendFailed(EmailFailedException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Email sending failed: " + ex.getMessage()));
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateEmailException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(EmailNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEmailNotFound(EmailNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(),
-                        "Email record not found: " + ex.getMessage()));
+                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage()));
     }
 
+    @ExceptionHandler(MailGatewayException.class)
+    public ResponseEntity<ErrorResponse> handleMailGateway(MailGatewayException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ErrorResponse(HttpStatus.BAD_GATEWAY.value(), ex.getMessage()));
+    }
+
+    // Keep a generic fallback if needed
+    @ExceptionHandler(EmailFailedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailFailed(EmailFailedException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
+    }
 
     @ExceptionHandler(InvalidMarksException.class)
     public ResponseEntity<ErrorResponse> handleInvalidMarks(InvalidMarksException ex) {
