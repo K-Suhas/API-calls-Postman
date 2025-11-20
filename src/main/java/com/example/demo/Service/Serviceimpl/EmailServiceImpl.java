@@ -13,6 +13,7 @@ import com.example.demo.Repository.EmailRepository;
 import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Service.EmailService;
 import com.example.demo.Service.GoogleTokenService;
+import com.example.demo.Service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private GmailOAuth2Sender gmailSender;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public EmailDTO sendEmail(String toEmail, String subject, String body) {
@@ -58,10 +61,12 @@ public class EmailServiceImpl implements EmailService {
         try {
             String accessToken = googleTokenService.getAccessToken();
             gmailSender.send(toEmail, subject, body, accessToken);
+            notificationService.create("Mail Sent", "Mail sent successfully to " + toEmail);
 
             notification.setStatus(EmailStatus.SENT);
             notification.setSentTime(LocalDateTime.now());
         } catch (Exception e) {
+            notificationService.create("Mail Failed", "Failed to send mail to " + toEmail + ": " + e.getMessage());
             notification.setStatus(EmailStatus.FAILED);
             notification.setSentTime(LocalDateTime.now());
             repository.save(notification);
