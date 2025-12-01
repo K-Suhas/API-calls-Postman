@@ -2,6 +2,7 @@
 package com.example.demo.Resource;
 
 import com.example.demo.DTO.ReportJobStatusDTO;
+import com.example.demo.DTO.StudentMarksheetDTO;
 import com.example.demo.Service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -13,7 +14,10 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:4200")
 public class StudentReportResource {
 
-    @Autowired private ReportService reportService;
+    @Autowired
+    private ReportService reportService;
+
+    // ===== Bulk CSV job endpoints =====
 
     // Start CSV report generation job
     @PostMapping("/students/start")
@@ -28,13 +32,35 @@ public class StudentReportResource {
         return ResponseEntity.ok(reportService.getJobStatus(jobId));
     }
 
-    // Download CSV when ready
+    // Download bulk CSV when ready
     @GetMapping("/students/download/{jobId}")
     public ResponseEntity<Resource> download(@PathVariable String jobId) {
         Resource res = reportService.downloadReport(jobId);
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=student_report.csv");
-        headers.setContentType(MediaType.TEXT_PLAIN);
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
         return ResponseEntity.ok().headers(headers).body(res);
+    }
+
+    // ===== Individual student report endpoints =====
+
+    // View JSON for a single student (Marksheet)
+    @GetMapping("/{studentId}")
+    public ResponseEntity<StudentMarksheetDTO> getIndividualReport(
+            @PathVariable Long studentId,
+            @RequestParam int semester) {
+        return ResponseEntity.ok(reportService.getIndividualReport(studentId, semester));
+    }
+
+    // Download CSV for a single student
+    @GetMapping("/download/{studentId}")
+    public ResponseEntity<Resource> downloadIndividualReport(
+            @PathVariable Long studentId,
+            @RequestParam int semester) {
+        Resource resource = reportService.downloadIndividualReport(studentId, semester);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=student_" + studentId + "_report.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(resource);
     }
 }

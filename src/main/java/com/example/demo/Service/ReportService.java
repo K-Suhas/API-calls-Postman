@@ -2,19 +2,20 @@
 package com.example.demo.Service;
 
 import com.example.demo.DTO.ReportJobStatusDTO;
+import com.example.demo.DTO.StudentMarksheetDTO;
 import org.springframework.core.io.Resource;
 
 public interface ReportService {
 
-    // Start a simulated CSV report generation job (returns jobId)
+    // ===== Bulk CSV job API =====
     String startCsvReportJob(Integer semester);
-
-    // Poll job status by jobId
     ReportJobStatusDTO getJobStatus(String jobId);
-
-    // Download the generated CSV file when ready
     Resource downloadReport(String jobId);
 
-    // Direct CSV generation (used internally by the async job)
+    // Direct generator used internally (optional exposure)
     Resource generateCsvReport(Integer semester);
+
+    // ===== Individual student report API =====
+    StudentMarksheetDTO getIndividualReport(Long studentId, int semester);
+    Resource downloadIndividualReport(Long studentId, int semester);
 }
