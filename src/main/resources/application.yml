@@ -36,5 +36,11 @@ google:
   tokenUri: ${GOOGLE_TOKEN_URI}
   redirectUri: ${GOOGLE_REDIRECT_URI}
   scope: ${GOOGLE_SCOPE}
+report:
+  admin:
+    email: suhaskrishna2002@gmail.com   # ✅ recipient of scheduled reports
+  scheduler:
+    enabled: true              # ✅ toggle scheduler on/off
+    cron: "0 0 7 * * *"
 
 

@@ -16,6 +16,7 @@ import com.example.demo.Service.GoogleTokenService;
 import com.example.demo.Service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.core.io.Resource;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -122,8 +123,45 @@ public class EmailServiceImpl implements EmailService {
                 .map(s -> sendEmail(s.getEmail(), subject, body)) // exceptions propagate
                 .collect(Collectors.toList());
     }
+    @Override
+    public EmailDTO sendAdminEmail(String toEmail, String subject, String body, Resource attachment) {
+        // No StudentRepository validation here
+        EmailDomain notification = new EmailDomain()
+                .setToEmail(toEmail)
+                .setSubject(subject)
+                .setBody(body)
+                .setStatus(EmailStatus.PENDING);
 
+        notification = repository.save(notification);
 
+        try {
+            String accessToken = googleTokenService.getAccessToken();
+
+            // ✅ Pass filename explicitly as 5th argument
+            gmailSender.sendWithAttachment(
+                    toEmail,
+                    subject,
+                    body,
+                    attachment,
+                    "students_report.csv",   // filename for the attachment
+                    accessToken
+            );
+
+            notificationService.create("Mail Sent", "Admin report mailed successfully to " + toEmail);
+
+            notification.setStatus(EmailStatus.SENT);
+            notification.setSentTime(LocalDateTime.now());
+        } catch (Exception e) {
+            notificationService.create("Mail Failed", "Failed to send admin mail to " + toEmail + ": " + e.getMessage());
+            notification.setStatus(EmailStatus.FAILED);
+            notification.setSentTime(LocalDateTime.now());
+            repository.save(notification);
+            throw new MailGatewayException("Failed to send admin mail: " + e.getMessage());
+        }
+
+        repository.save(notification);
+        return mapToDTO(notification);
+    }
 
 }
 
