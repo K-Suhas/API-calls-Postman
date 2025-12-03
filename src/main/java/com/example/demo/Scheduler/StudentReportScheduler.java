@@ -8,7 +8,6 @@ import com.example.demo.Service.ReportService;
 import com.example.demo.Service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.Async;

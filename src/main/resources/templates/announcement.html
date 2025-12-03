@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { color: #b22222; }
+        ul { margin-top: 10px; }
+        li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+<h2 th:text="'All Students Assemble - ' + ${dateTime}"></h2>
+<p>Hello Students,</p>
+<p>Please note the following announcement:</p>
+<ul>
+    <li>Prayer at 9:30 AM</li>
+    <li>Disperse at 10:00 AM</li>
+    <li>Attend classes after dispersal</li>
+    <li>Lunch at 12:00 PM Assemble in ground for receving food</li>7
+</ul>
+<p>Regards,<br/>Admin</p>
+</body>
+</html>
