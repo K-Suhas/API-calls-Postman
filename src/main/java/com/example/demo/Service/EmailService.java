@@ -11,4 +11,6 @@ public interface EmailService {
     List<EmailDTO> sendEmailToAll(String subject, String body);
 
     EmailDTO sendAdminEmail(String toEmail, String subject, String body, Resource attachment);
+
+    void sendTimetableEmailToAll(String dayName, String dateTime);
 }

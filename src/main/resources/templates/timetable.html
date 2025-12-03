@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+<h2 th:text="${dayName} + ' Timetable - ' + ${dateTime}"></h2>
+<p>Hello Students,</p>
+<table>
+    <tr><th>Time</th><th>Subject</th></tr>
+    <tr><td>09:00 - 10:00</td><td>DBMS</td></tr>
+    <tr><td>10:00 - 11:00</td><td>Data Structures</td></tr>
+    <tr><td>11:00 - 12:00</td><td>DAA</td></tr>
+    <tr><td>12:00 - 01:00</td><td>Lunch Break</td></tr>
+    <tr><td>01:00 - 02:00</td><td>ADE</td></tr>
+    <tr><td>02:00 - 03:00</td><td>MES</td></tr>
+</table>
+<p>Regards,<br/>Admin</p>
+</body>
+</html>

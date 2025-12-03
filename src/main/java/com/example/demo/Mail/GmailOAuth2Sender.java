@@ -27,7 +27,7 @@ public class GmailOAuth2Sender {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    // ✅ Existing plain text send
+    // ✅ Updated: send HTML mail
     public void send(String to, String subject, String body, String accessToken) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
@@ -42,7 +42,9 @@ public class GmailOAuth2Sender {
         msg.setFrom(new InternetAddress(fromEmail));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
         msg.setSubject(subject);
-        msg.setText(body);
+
+        // ✅ Send HTML content instead of plain text
+        msg.setContent(body, "text/html; charset=utf-8");
 
         SMTPTransport transport = (SMTPTransport) session.getTransport("smtp");
         transport.connect(host, fromEmail, accessToken);
@@ -50,7 +52,7 @@ public class GmailOAuth2Sender {
         transport.close();
     }
 
-    // ✅ New method: send with attachment
+    // ✅ Send with attachment (can also be HTML body)
     public void sendWithAttachment(String to, String subject, String body,
                                    Resource attachment, String filename, String accessToken) throws Exception {
         Properties props = new Properties();
@@ -67,9 +69,9 @@ public class GmailOAuth2Sender {
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
         msg.setSubject(subject);
 
-        // Body part
+        // Body part (HTML)
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText(body);
+        textPart.setContent(body, "text/html; charset=utf-8");
 
         // Attachment part
         MimeBodyPart attachmentPart = new MimeBodyPart();

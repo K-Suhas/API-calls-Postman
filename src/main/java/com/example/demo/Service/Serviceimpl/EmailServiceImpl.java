@@ -11,13 +11,17 @@ import com.example.demo.ExceptionHandler.MailGatewayException;
 import com.example.demo.Mail.GmailOAuth2Sender;
 import com.example.demo.Repository.EmailRepository;
 import com.example.demo.Repository.StudentRepository;
+import com.example.demo.Scheduler.StudentTimetableScheduler;
 import com.example.demo.Service.EmailService;
 import com.example.demo.Service.GoogleTokenService;
 import com.example.demo.Service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
-
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +42,10 @@ public class EmailServiceImpl implements EmailService {
     private GmailOAuth2Sender gmailSender;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private TemplateEngine templateEngine;
+    private static final Logger log = LoggerFactory.getLogger(StudentTimetableScheduler.class);
+
 
     @Override
     public EmailDTO sendEmail(String toEmail, String subject, String body) {
@@ -162,6 +170,25 @@ public class EmailServiceImpl implements EmailService {
         repository.save(notification);
         return mapToDTO(notification);
     }
+    @Override
+    public void sendTimetableEmailToAll(String dayName, String dateTime) {
+        Context context = new Context();
+        context.setVariable("dayName", dayName);
+        context.setVariable("dateTime", dateTime);
+
+        String htmlContent = templateEngine.process("timetable", context);
+
+        // ✅ Use your existing sendEmailToAll but pass HTML
+        studentRepository.findAll().forEach(student -> {
+            try {
+                String accessToken = googleTokenService.getAccessToken();
+                gmailSender.send(student.getEmail(), dayName + " Timetable - " + dateTime, htmlContent, accessToken);
+            } catch (Exception e) {
+                log.error("Failed to send timetable mail to {}", student.getEmail(), e);
+            }
+        });
+    }
+
 
 }
 
