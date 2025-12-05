@@ -5,18 +5,20 @@ import com.example.demo.Domain.NotificationDomain;
 import com.example.demo.Mapper.NotificationMapper;
 import com.example.demo.Repository.NotificationRepository;
 import com.example.demo.Service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
-    @Autowired
-    private NotificationRepository repo;
-    @Autowired private NotificationMapper mapper;
+    private final NotificationRepository repo;
+    private final NotificationMapper mapper;
+    public NotificationServiceImpl(NotificationRepository repo,NotificationMapper mapper)
+    {
+        this.repo=repo;
+        this.mapper=mapper;
+    }
 
     @Override
     public NotificationDTO create(String title, String message) {

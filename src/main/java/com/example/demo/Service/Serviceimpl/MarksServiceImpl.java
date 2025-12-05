@@ -10,7 +10,6 @@ import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Repository.MarksRepository;
 import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Service.MarksService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,17 +17,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class MarksServiceImpl implements MarksService {
-
-    @Autowired
-    private MarksRepository marksRepository;
-
-    @Autowired
-    private StudentRepository studentRepository;
+    private final MarksRepository marksRepository;
+    private final StudentRepository studentRepository;
+    public MarksServiceImpl(MarksRepository marksRepository,StudentRepository studentRepository)
+    {
+        this.marksRepository=marksRepository;
+        this.studentRepository=studentRepository;
+    }
 
     private static final List<String> VALID_SUBJECTS = List.of("DBMS", "DATA STRUCTURES", "DAA", "ADE", "MES");
 
@@ -78,7 +77,7 @@ public class MarksServiceImpl implements MarksService {
 
         List<MarksDTO> subjects = pageData.getContent().stream()
                 .map(m -> new MarksDTO(m.getSubjectName(), m.getMarksObtained()))
-                .collect(Collectors.toList());
+                .toList();
 
         int total = subjects.stream().mapToInt(MarksDTO::getMarksObtained).sum();
         double percentage = total / (subjects.size() * 1.0);

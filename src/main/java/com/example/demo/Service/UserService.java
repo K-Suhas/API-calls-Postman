@@ -7,9 +7,7 @@ import java.util.Optional;
 
 public interface UserService {
     UserDTO loginOrRegisterGoogleUser(String email, String name);
-
     UserDTO authenticateWithGoogle(String idTokenString);
-
     Optional<UserDTO> findByEmail(String email);
     Role getUserRole(String email);
 

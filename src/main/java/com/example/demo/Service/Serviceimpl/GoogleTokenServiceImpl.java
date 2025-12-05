@@ -1,5 +1,6 @@
 package com.example.demo.Service.Serviceimpl;
 
+import com.example.demo.ExceptionHandler.TokenRefreshException;
 import com.example.demo.Service.GoogleTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -36,13 +37,19 @@ public class GoogleTokenServiceImpl implements GoogleTokenService {
                 "&grant_type=refresh_token";
 
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = rest.postForEntity(tokenUri, entity, Map.class);
+        ResponseEntity<Map<String, Object>> response =
+                rest.postForEntity(tokenUri, entity, (Class<Map<String, Object>>)(Class<?>)Map.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Failed to refresh access token: " + response.getStatusCode());
+            throw new TokenRefreshException("Failed to refresh access token: " + response.getStatusCode());
         }
 
-        return (String) response.getBody().get("access_token");
-    }
-}
+        Object token = response.getBody().get("access_token");
+        if (token == null) {
+            throw new TokenRefreshException("Access token missing in response body");
+        }
 
+        return token.toString();
+    }
+
+}

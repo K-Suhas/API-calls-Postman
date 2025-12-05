@@ -11,11 +11,10 @@ import com.example.demo.ExceptionHandler.MailGatewayException;
 import com.example.demo.Mail.GmailOAuth2Sender;
 import com.example.demo.Repository.EmailRepository;
 import com.example.demo.Repository.StudentRepository;
-import com.example.demo.Scheduler.StudentTimetableScheduler;
 import com.example.demo.Service.EmailService;
 import com.example.demo.Service.GoogleTokenService;
 import com.example.demo.Service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
 import org.thymeleaf.TemplateEngine;
@@ -23,28 +22,28 @@ import org.thymeleaf.context.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class EmailServiceImpl implements EmailService {
+    private final EmailRepository repository;
+    private final StudentRepository studentRepository;  // ✅ Inject StudentRepository
+    private final GoogleTokenService googleTokenService;
+    private final GmailOAuth2Sender gmailSender;
+    private final NotificationService notificationService;
+    private final TemplateEngine templateEngine;
+    public EmailServiceImpl(EmailRepository repository,StudentRepository studentRepository,GoogleTokenService googleTokenService,GmailOAuth2Sender gmailSender,NotificationService notificationService,TemplateEngine templateEngine)
+    {
+        this.repository=repository;
+        this.gmailSender=gmailSender;
+        this.googleTokenService=googleTokenService;
+        this.notificationService=notificationService;
+        this.studentRepository=studentRepository;
+        this.templateEngine=templateEngine;
+    }
 
-    @Autowired
-    private EmailRepository repository;
-
-    @Autowired
-    private StudentRepository studentRepository;  // ✅ Inject StudentRepository
-
-    @Autowired
-    private GoogleTokenService googleTokenService;
-
-    @Autowired
-    private GmailOAuth2Sender gmailSender;
-    @Autowired
-    private NotificationService notificationService;
-    @Autowired
-    private TemplateEngine templateEngine;
-    private static final Logger log = LoggerFactory.getLogger(StudentTimetableScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
 
     @Override
@@ -87,15 +86,13 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
-
-
     @Override
     public List<EmailDTO> getAllNotifications() {
         List<EmailDomain> notifications = repository.findAll();
         if (notifications.isEmpty()) {
             throw new EmailNotFoundException("No email notifications found");
         }
-        return notifications.stream().map(this::mapToDTO).collect(Collectors.toList());
+        return notifications.stream().map(this::mapToDTO).toList();
     }
 
     private EmailDTO mapToDTO(EmailDomain entity) {
@@ -108,6 +105,7 @@ public class EmailServiceImpl implements EmailService {
                 entity.getSentTime()
         );
     }
+
     @Override
     public List<EmailDTO> sendEmailToAll(String subject, String body) {
         List<StudentDomain> students = studentRepository.findAll();
@@ -129,7 +127,7 @@ public class EmailServiceImpl implements EmailService {
         // Fail-fast (first failure aborts)
         return students.stream()
                 .map(s -> sendEmail(s.getEmail(), subject, body)) // exceptions propagate
-                .collect(Collectors.toList());
+                .toList();
     }
     @Override
     public EmailDTO sendAdminEmail(String toEmail, String subject, String body, Resource attachment) {
@@ -188,6 +186,27 @@ public class EmailServiceImpl implements EmailService {
             }
         });
     }
+    @Async
+    @Override
+    public void sendAnnouncementToAllStudents() {
+        String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
+        Context context = new Context();
+        context.setVariable("dateTime", dateTime);
+
+        String htmlContent = templateEngine.process("announcement", context);
+
+        sendEmailToAll("All Students Assemble - " + dateTime, htmlContent);
+
+        log.info("Announcement mail sent to all students at {}", dateTime);
+    }
+    // In EmailServiceImpl
+    @Async
+    @Override
+    public void sendDailyReport(Resource csv, String subject, String body, String adminEmail) {
+        sendAdminEmail(adminEmail, subject, body, csv);
+        log.info("Daily student CSV report emailed to admin {}", adminEmail);
+    }
+
 
 
 }

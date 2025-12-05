@@ -3,8 +3,6 @@ package com.example.demo.Resource;
 import com.example.demo.DTO.StudentDTO;
 import com.example.demo.DTO.CourseDTO;
 import com.example.demo.Service.AdminDashboardService;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -15,7 +13,11 @@ import java.util.concurrent.CompletableFuture;
 @CrossOrigin(origins = "http://localhost:4200")
 public class AdminDashboardResource {
 
-    @Autowired private AdminDashboardService dashboardService;
+   private final AdminDashboardService dashboardService;
+   public AdminDashboardResource(AdminDashboardService dashboardService)
+   {
+       this.dashboardService=dashboardService;
+   }
 
     @GetMapping("/dashboard")
     public CompletableFuture<Map<String, Object>> getDashboardData() {

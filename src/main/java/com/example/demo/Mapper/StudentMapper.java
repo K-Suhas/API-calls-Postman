@@ -6,9 +6,11 @@ import com.example.demo.Domain.StudentDomain;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class StudentMapper {
+    private StudentMapper() {
+        throw new UnsupportedOperationException("Utility class should not be instantiated");
+    }
 
     public static StudentDTO toDTO(StudentDomain domain) {
         if (domain == null) return null;
@@ -23,7 +25,7 @@ public class StudentMapper {
         if (domain.getCourses() != null) {
             dto.setCourseNames(domain.getCourses().stream()
                     .map(CourseDomain::getName)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return dto;

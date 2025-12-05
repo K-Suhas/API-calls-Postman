@@ -5,6 +5,9 @@ import com.example.demo.DTO.UserDTO;
 import com.example.demo.Enum.Role;
 
 public class UserMapper {
+    private UserMapper() {
+        throw new UnsupportedOperationException("Utility class should not be instantiated");
+    }
     public static UserDTO toDTO(UserDomain user) {
         return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }

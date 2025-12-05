@@ -7,21 +7,23 @@ import com.example.demo.Mapper.CourseMapper;
 import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Repository.CourseRepository;
 import com.example.demo.Service.AdminDashboardService;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminDashboardServiceImpl implements AdminDashboardService {
 
-    @Autowired private StudentRepository studentRepo;
-    @Autowired private CourseRepository courseRepo;
+    private final StudentRepository studentRepo;
+    private final CourseRepository courseRepo;
+    public AdminDashboardServiceImpl(StudentRepository studentRepo,CourseRepository courseRepo)
+    {
+        this.courseRepo=courseRepo;
+        this.studentRepo=studentRepo;
+    }
 
     @Async
     @Transactional(readOnly = true)
@@ -29,7 +31,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         List<StudentDTO> dtos = studentRepo.findAll()
                 .stream()
                 .map(StudentMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
         return CompletableFuture.completedFuture(dtos);
     }
 
@@ -39,7 +41,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         List<CourseDTO> dtos = courseRepo.findAll()
                 .stream()
                 .map(CourseMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
         return CompletableFuture.completedFuture(dtos);
     }
 }

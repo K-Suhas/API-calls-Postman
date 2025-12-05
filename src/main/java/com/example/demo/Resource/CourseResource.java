@@ -3,7 +3,6 @@ package com.example.demo.Resource;
 import com.example.demo.DTO.CourseDTO;
 import com.example.demo.Service.CourseService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -15,8 +14,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:4200")
 public class CourseResource {
 
-    @Autowired
-    private CourseService courseService;
+
+    private final CourseService courseService;
+    public CourseResource(CourseService courseService)
+    {
+        this.courseService=courseService;
+    }
 
     @PostMapping
     public ResponseEntity<String> createCourse(@Valid @RequestBody CourseDTO course) {

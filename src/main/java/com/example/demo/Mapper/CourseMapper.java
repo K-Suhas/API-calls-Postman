@@ -4,9 +4,14 @@ import com.example.demo.DTO.CourseDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.StudentDomain;
 
-import java.util.stream.Collectors;
 
 public class CourseMapper {
+
+    // 🔑 Private constructor to hide implicit public one
+    private CourseMapper() {
+        throw new UnsupportedOperationException("Utility class should not be instantiated");
+    }
+
     public static CourseDTO toDTO(CourseDomain domain) {
         if (domain == null) return null;
 
@@ -17,7 +22,7 @@ public class CourseMapper {
         if (domain.getStudents() != null) {
             dto.setStudentNames(domain.getStudents().stream()
                     .map(StudentDomain::getName)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return dto;

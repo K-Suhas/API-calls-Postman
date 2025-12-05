@@ -6,7 +6,6 @@ import com.example.demo.Enum.Role;
 import com.example.demo.Mapper.UserMapper;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -14,23 +13,25 @@ import java.util.Optional;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Value;
 @Service
 public class UserServiceImpl implements UserService {
-
-    @Autowired
     private UserRepository userRepository;
+    public UserServiceImpl(UserRepository userRepository)
+    {
+        this.userRepository=userRepository;
+    }
 
     @Value("${google.clientId}")
     private String clientId;
 
+
     @Override
     public UserDTO authenticateWithGoogle(String idTokenString) {
-        System.out.println(idTokenString);
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
-                JacksonFactory.getDefaultInstance())
+                GsonFactory.getDefaultInstance())   // ✅ use GsonFactory instead of JacksonFactory
                 .setAudience(Collections.singletonList(clientId))
                 .build();
 

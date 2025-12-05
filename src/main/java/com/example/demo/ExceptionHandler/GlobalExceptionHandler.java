@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 
-import java.util.List;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -70,11 +69,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid JSON input: " + ex.getMessage()));
     }
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ErrorResponse> handleTokenRefresh(TokenRefreshException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Token refresh failed: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(ReportGenerationException.class)
+    public ResponseEntity<ErrorResponse> handleReportGeneration(ReportGenerationException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Something went wrong: " + ex.getMessage()));
     }
+
+    @ExceptionHandler(BulkValidationException.class)
+    public ResponseEntity<ErrorResponse> handleBulkValidation(BulkValidationException ex) {
+        // Combine all row errors into a single string
+        String combinedErrors = String.join("; ", ex.getErrors());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), combinedErrors));
+    }
+
 
 }

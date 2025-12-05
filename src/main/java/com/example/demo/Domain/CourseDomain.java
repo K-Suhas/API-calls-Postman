@@ -8,7 +8,6 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @AllArgsConstructor
@@ -23,8 +22,10 @@ public class CourseDomain {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id", nullable = false)
     private Long id;
+
     @Column(name="name", nullable = false)
     private String name;
+
     @ManyToMany(mappedBy = "courses")
     private Set<StudentDomain> students = new HashSet<>();
 

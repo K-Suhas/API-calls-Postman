@@ -1,4 +1,3 @@
-// src/main/java/com/example/demo/Service/Serviceimpl/ReportServiceImpl.java
 package com.example.demo.Service.Serviceimpl;
 
 import com.example.demo.DTO.MarksDTO;
@@ -7,11 +6,11 @@ import com.example.demo.DTO.StudentMarksheetDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.MarksDomain;
 import com.example.demo.Domain.StudentDomain;
+import com.example.demo.ExceptionHandler.ReportGenerationException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Repository.MarksRepository;
 import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Service.ReportService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -24,12 +23,20 @@ import java.util.stream.Collectors;
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    @Autowired private StudentRepository studentRepository;
-    @Autowired private MarksRepository marksRepository;
+    private final StudentRepository studentRepository;
+    private final MarksRepository marksRepository;
+
+    public ReportServiceImpl(StudentRepository studentRepository, MarksRepository marksRepository) {
+        this.marksRepository = marksRepository;
+        this.studentRepository = studentRepository;
+    }
 
     // In-memory job storage
     private final Map<String, ReportJobStatusDTO> jobs = new ConcurrentHashMap<>();
     private final Map<String, byte[]> jobFiles = new ConcurrentHashMap<>();
+
+    // Constant for common state
+    private static final String STATE_RUNNING = "RUNNING";
 
     // ===== Bulk CSV job API =====
 
@@ -38,110 +45,66 @@ public class ReportServiceImpl implements ReportService {
         String jobId = UUID.randomUUID().toString();
         jobs.put(jobId, new ReportJobStatusDTO(jobId, 0, "PENDING", "Queued"));
 
-        new Thread(() -> {
-            try {
-                update(jobId, 25, "RUNNING", "Fetching students");
-                Thread.sleep(1000);
-
-                List<StudentDomain> students;
-                try {
-                    // If you have a custom fetch that preloads courses
-                    students = studentRepository.findAllWithCourses();
-                } catch (Exception ignored) {
-                    students = studentRepository.findAll();
-                }
-                if (students.isEmpty()) {
-                    throw new ResourceNotFoundException("No students available to generate report");
-                }
-
-                update(jobId, 50, "RUNNING", "Aggregating marks");
-                Thread.sleep(1000);
-
-                List<MarksDomain> allMarks = marksRepository.findAll();
-                if (semester != null) {
-                    allMarks = allMarks.stream()
-                            .filter(m -> m.getSemester() == semester)
-                            .collect(Collectors.toList());
-                }
-                Map<Long, List<MarksDomain>> marksByStudent = allMarks.stream()
-                        .collect(Collectors.groupingBy(m -> m.getStudent().getId()));
-
-                update(jobId, 75, "RUNNING", "Computing totals");
-                Thread.sleep(1000);
-
-                // Build CSV
-                StringBuilder sb = new StringBuilder();
-                sb.append("ID,Name,Department,Email,DOB,Courses,Subjects,Total Marks Obtained,Percentage\n");
-                for (StudentDomain s : students) {
-                    List<MarksDomain> marks = marksByStudent.getOrDefault(s.getId(), Collections.emptyList());
-                    int subjects = marks.size();
-                    int total = marks.stream().mapToInt(MarksDomain::getMarksObtained).sum();
-                    double percentage = subjects > 0 ? (total / (subjects * 1.0)) : 0.0;
-
-                    String courses = (s.getCourses() == null) ? "" :
-                            s.getCourses().stream().map(CourseDomain::getName).sorted().collect(Collectors.joining(";"));
-
-                    sb.append(s.getId()).append(",")
-                            .append(escape(s.getName())).append(",")
-                            .append(escape(s.getDept())).append(",")
-                            .append(escape(s.getEmail())).append(",")
-                            .append(s.getDob() != null ? s.getDob() : "").append(",")
-                            .append(escape(courses)).append(",")
-                            .append(subjects).append(",")
-                            .append(total).append(",")
-                            .append(String.format("%.2f", percentage))
-                            .append("\n");
-                }
-
-                byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
-                jobFiles.put(jobId, data);
-
-                update(jobId, 100, "READY", "Report ready");
-            } catch (Exception e) {
-                update(jobId, 100, "FAILED", "Error: " + e.getMessage());
-            }
-        }).start();
+        // Use virtual thread for blocking I/O and sleeps
+        Thread.ofVirtual().start(() -> runCsvReportJob(jobId, semester));
 
         return jobId;
     }
 
-    @Override
-    public ReportJobStatusDTO getJobStatus(String jobId) {
-        return jobs.getOrDefault(jobId, new ReportJobStatusDTO(jobId, 0, "NOT_FOUND", "Invalid jobId"));
-    }
-
-    @Override
-    public Resource downloadReport(String jobId) {
-        byte[] data = jobFiles.get(jobId);
-        if (data == null) {
-            throw new ResourceNotFoundException("Report not found or not ready for jobId: " + jobId);
-        }
-        return new ByteArrayResource(data);
-    }
-
-    @Override
-    public Resource generateCsvReport(Integer semester) {
-        List<StudentDomain> students;
+    // Extracted method to reduce cognitive complexity
+    private void runCsvReportJob(String jobId, Integer semester) {
         try {
-            students = studentRepository.findAllWithCourses();
-        } catch (Exception ignored) {
-            students = studentRepository.findAll();
-        }
-        if (students.isEmpty()) {
-            throw new ResourceNotFoundException("No students available to generate report");
-        }
+            update(jobId, 25, STATE_RUNNING, "Fetching students");
+            sleepSafely();
 
+            List<StudentDomain> students = fetchStudents();
+            if (students.isEmpty()) {
+                throw new ResourceNotFoundException("No students available to generate report");
+            }
+
+            update(jobId, 50, STATE_RUNNING, "Aggregating marks");
+            sleepSafely();
+
+            Map<Long, List<MarksDomain>> marksByStudent = fetchMarksByStudent(semester);
+
+            update(jobId, 75, STATE_RUNNING, "Computing totals");
+            sleepSafely();
+
+            byte[] data = buildCsv(students, marksByStudent);
+            jobFiles.put(jobId, data);
+
+            update(jobId, 100, "READY", "Report ready");
+        } catch (Exception e) {
+            update(jobId, 100, "FAILED", "Error: " + e.getMessage());
+        }
+    }
+
+    // Helper: fetch students with courses if available
+    private List<StudentDomain> fetchStudents() {
+        try {
+            return studentRepository.findAllWithCourses();
+        } catch (Exception _) { // unnamed pattern instead of "ignored"
+            return studentRepository.findAll();
+        }
+    }
+
+    // Helper: fetch marks grouped by student, filtered by semester if provided
+    private Map<Long, List<MarksDomain>> fetchMarksByStudent(Integer semester) {
         List<MarksDomain> allMarks = marksRepository.findAll();
         if (semester != null) {
             allMarks = allMarks.stream()
                     .filter(m -> m.getSemester() == semester)
-                    .collect(Collectors.toList());
+                    .toList();
         }
-        Map<Long, List<MarksDomain>> marksByStudent = allMarks.stream()
+        return allMarks.stream()
                 .collect(Collectors.groupingBy(m -> m.getStudent().getId()));
+    }
 
+    // Helper: build CSV bytes
+    private byte[] buildCsv(List<StudentDomain> students, Map<Long, List<MarksDomain>> marksByStudent) {
         StringBuilder sb = new StringBuilder();
         sb.append("ID,Name,Department,Email,DOB,Courses,Subjects,Total Marks Obtained,Percentage\n");
+
         for (StudentDomain s : students) {
             List<MarksDomain> marks = marksByStudent.getOrDefault(s.getId(), Collections.emptyList());
             int subjects = marks.size();
@@ -163,7 +126,47 @@ public class ReportServiceImpl implements ReportService {
                     .append("\n");
         }
 
-        byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    // Safe sleep with re-interrupt or rethrow strategy
+    private void sleepSafely() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ReportGenerationException("Thread interrupted during report generation", e);
+        }
+    }
+
+    @Override
+    public ReportJobStatusDTO getJobStatus(String jobId) {
+        return jobs.getOrDefault(jobId, new ReportJobStatusDTO(jobId, 0, "NOT_FOUND", "Invalid jobId"));
+    }
+
+    @Override
+    public Resource downloadReport(String jobId) {
+        byte[] data = jobFiles.get(jobId);
+        if (data == null) {
+            throw new ResourceNotFoundException("Report not found or not ready for jobId: " + jobId);
+        }
+        return new ByteArrayResource(data);
+    }
+
+    @Override
+    public Resource generateCsvReport(Integer semester) {
+        List<StudentDomain> students;
+        try {
+            students = studentRepository.findAllWithCourses();
+        } catch (Exception _) {
+            students = studentRepository.findAll();
+        }
+        if (students.isEmpty()) {
+            throw new ResourceNotFoundException("No students available to generate report");
+        }
+
+        Map<Long, List<MarksDomain>> marksByStudent = fetchMarksByStudent(semester);
+        byte[] data = buildCsv(students, marksByStudent);
         return new ByteArrayResource(data);
     }
 
@@ -215,10 +218,9 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public org.springframework.core.io.Resource downloadIndividualReport(Long studentId, int semester) {
+    public Resource downloadIndividualReport(Long studentId, int semester) {
         StudentMarksheetDTO dto = getIndividualReport(studentId, semester);
 
-        // ✅ join course names for CSV
         String coursesJoined = (dto.getCourseNames() == null || dto.getCourseNames().isEmpty())
                 ? ""
                 : String.join(";", dto.getCourseNames());
@@ -240,7 +242,6 @@ public class ReportServiceImpl implements ReportService {
                 sb.append(escape(m.getSubjectName())).append(",").append(m.getMarksObtained()).append("\n")
         );
 
-        return new org.springframework.core.io.ByteArrayResource(sb.toString().getBytes(StandardCharsets.UTF_8));
+        return new ByteArrayResource(sb.toString().getBytes(StandardCharsets.UTF_8));
     }
-
 }

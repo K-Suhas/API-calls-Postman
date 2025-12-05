@@ -1,0 +1,25 @@
+[33m980f7ca[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Automatic anouncement mail scheduled
+[33mcdeb8f4[m Automatic timetable email scheduled
+[33m2232636[m Automatic Email scheduled each day
+[33mdd4738c[m Individual Student Report Generation
+[33m3e40528[m Student Report Generation
+[33m95f229b[m Removed embedded repos (backup-repo, git-filter-repo) from index
+[33mc2ed561[m Ignore .env file to prevent secrets in repo
+[33m67eb4af[m Update .gitignore to ignore backup-repo
+[33mae39787[m Remove embedded backup-repo from tracking and ignore it
+[33m422481f[m Remove secrets from application.yml Remove secrets from application.yml
+[33m84c7d5a[m Email Configuration added where admin send to individual student
+[33m0a94e9c[m Admin dashboard using Async and CompletableFuture Class
+[33m522475d[m Graph presentation of marks changes with display of student namne and id
+[33m122007f[m Markssheet updation foe each student
+[33me59ccd5[m Different functinoalities assigned for their respective roles
+[33m4cea0e8[m Bulk Upload of Student data
+[33m2b223b7[m google Oauth2.0with user table updation
+[33mf57dd06[m Exception handling
+[33m3861e39[m Pagination
+[33me1d79d2[m search bar update with dob
+[33mbc5c718[m search bar update
+[33m3721a2a[m cors error update
+[33m8cffe15[m Your descriptive commit message
+[33m1467bb5[m Added Postman collection for API testing
+[33m454e700[m Initial commit with Spring Boot API and Postman collection

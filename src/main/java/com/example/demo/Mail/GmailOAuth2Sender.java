@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -54,7 +55,7 @@ public class GmailOAuth2Sender {
 
     // ✅ Send with attachment (can also be HTML body)
     public void sendWithAttachment(String to, String subject, String body,
-                                   Resource attachment, String filename, String accessToken) throws Exception {
+                                   Resource attachment, String filename, String accessToken) throws MessagingException, IOException {
         Properties props = new Properties();
         props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
         props.put("mail.smtp.auth", "true");

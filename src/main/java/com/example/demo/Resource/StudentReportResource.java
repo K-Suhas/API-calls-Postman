@@ -4,7 +4,6 @@ package com.example.demo.Resource;
 import com.example.demo.DTO.ReportJobStatusDTO;
 import com.example.demo.DTO.StudentMarksheetDTO;
 import com.example.demo.Service.ReportService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +13,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:4200")
 public class StudentReportResource {
 
-    @Autowired
-    private ReportService reportService;
+
+    private final ReportService reportService;
+    public StudentReportResource(ReportService reportService)
+    {
+        this.reportService=reportService;
+    }
 
     // ===== Bulk CSV job endpoints =====
 

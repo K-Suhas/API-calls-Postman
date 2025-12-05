@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xml:lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
+    <title>Student Assembly Announcement</title>
     <style>
         body { font-family: Arial, sans-serif; }
         h2 { color: #b22222; }
@@ -9,14 +11,19 @@
     </style>
 </head>
 <body>
-<h2 th:text="'All Students Assemble - ' + ${dateTime}"></h2>
+<!-- Accessible heading with guaranteed content -->
+<h2 th:text="'All Students Assemble - ' + (${dateTime} != null ? ${dateTime} : 'Date not provided')"
+    aria-label="All Students Assemble Announcement">
+    All Students Assemble - Date not provided
+</h2>
+
 <p>Hello Students,</p>
 <p>Please note the following announcement:</p>
 <ul>
     <li>Prayer at 9:30 AM</li>
     <li>Disperse at 10:00 AM</li>
     <li>Attend classes after dispersal</li>
-    <li>Lunch at 12:00 PM Assemble in ground for receving food</li>7
+    <li>Lunch at 12:00 PM. Assemble in ground for receiving food</li>
 </ul>
 <p>Regards,<br/>Admin</p>
 </body>

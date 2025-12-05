@@ -5,7 +5,6 @@ import com.example.demo.ExceptionHandler.DuplicateResourceException;
 import com.example.demo.ExceptionHandler.InvalidMarksException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Service.MarksService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,8 +18,12 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:4200")
 public class MarksResource {
 
-    @Autowired
-    private MarksService marksService;
+
+    private final MarksService marksService;
+    public MarksResource(MarksService marksService)
+    {
+        this.marksService=marksService;
+    }
 
     @PostMapping("/bulk")
     public ResponseEntity<String> createAllMarks(@RequestBody MarksEntryRequestDTO request) {

@@ -3,7 +3,6 @@ package com.example.demo.Repository;
 import com.example.demo.DTO.StudentMarksProjection;
 import com.example.demo.Domain.MarksDomain;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

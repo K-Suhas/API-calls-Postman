@@ -17,6 +17,7 @@ import java.time.LocalDate;
 
 @Component
 public class StudentReportScheduler {
+
     private static final Logger log = LoggerFactory.getLogger(StudentReportScheduler.class);
 
     private final ReportService reportService;
@@ -34,28 +35,22 @@ public class StudentReportScheduler {
     @Scheduled(cron = "${report.scheduler.cron}", zone = "Asia/Kolkata")
     public void scheduleDailyReport() {
         log.info("Scheduler triggered for daily student CSV report");
-        generateAndSendReport();
-    }
-
-    @Async
-    public void generateAndSendReport() {
         try {
             Resource csv = reportService.generateCsvReport(null);
             String subject = "Daily Students Report - " + LocalDate.now();
             String body = "Attached is the daily students report.";
 
-            // ✅ Fetch admin email from User table
             String adminEmail = userRepository.findByRole(Role.ADMIN)
                     .map(UserDomain::getEmail)
                     .orElseThrow(() -> new RuntimeException("No admin user found"));
 
-            // ✅ Use a new method in EmailService that doesn’t require student validation
-            emailService.sendAdminEmail(adminEmail, subject, body, csv);
+            // ✅ delegate to async method in EmailService
+            emailService.sendDailyReport(csv, subject, body, adminEmail);
 
-            log.info("Daily student CSV report emailed to admin {}", adminEmail);
         } catch (Exception e) {
             log.error("Failed to generate/send student CSV report", e);
         }
     }
 }
+
 

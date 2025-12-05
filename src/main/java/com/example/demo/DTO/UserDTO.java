@@ -1,6 +1,4 @@
 package com.example.demo.DTO;
-
-import com.example.demo.Domain.UserDomain;
 import com.example.demo.Enum.Role;
 import lombok.*;
 

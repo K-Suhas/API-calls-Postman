@@ -3,7 +3,6 @@ package com.example.demo.Resource;
 import com.example.demo.DTO.BulkStudentDTO;
 import com.example.demo.DTO.StudentDTO;
 import com.example.demo.Service.StudentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -19,8 +18,12 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:4200")
 public class StudentResource {
 
-    @Autowired
-    private StudentService studentService;
+
+    private final StudentService studentService;
+    public StudentResource(StudentService studentService)
+    {
+        this.studentService=studentService;
+    }
 
     @PostMapping
     public ResponseEntity<String> createstudent(@RequestBody StudentDTO student) {
@@ -63,12 +66,13 @@ public class StudentResource {
         return ResponseEntity.ok(result);
     }
     @PostMapping("/bulk")
-    public ResponseEntity<?> addstudentsInBulk(@RequestBody BulkStudentDTO bulkDto) {
+    public ResponseEntity<Object> addstudentsInBulk(@RequestBody BulkStudentDTO bulkDto) {
         List<String> errors = studentService.addStudentsInBulk(bulkDto);
         if (!errors.isEmpty()) {
             return ResponseEntity.badRequest().body(errors);
         }
         return ResponseEntity.ok(Map.of("message", "Students uploaded successfully"));
     }
+
 
 }
