@@ -18,7 +18,7 @@ public class StudentAnnouncementScheduler {
         this.emailService = emailService;
     }
 
-    @Scheduled(cron = "0 */5 * * * ?", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 0 7 * * ?", zone = "Asia/Kolkata")
     public void scheduleDailyAnnouncement() {
         log.info("Scheduler triggered for daily student announcement mail");
         emailService.sendAnnouncementToAllStudents(); // ✅ goes through proxy

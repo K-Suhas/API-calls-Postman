@@ -11,5 +11,6 @@ public interface UserService {
     Optional<UserDTO> findByEmail(String email);
     Role getUserRole(String email);
 
+    UserDTO addAdmin(UserDTO userDTO);
 }
 

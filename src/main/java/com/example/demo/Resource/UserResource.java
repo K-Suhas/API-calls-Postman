@@ -38,4 +38,9 @@ public class UserResource {
     public ResponseEntity<Role> getRole(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserRole(email));
     }
+    @PostMapping("/add-admin")
+    public ResponseEntity<UserDTO> addAdmin(@RequestBody UserDTO userDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.addAdmin(userDTO));
+    }
+
 }

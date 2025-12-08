@@ -11,6 +11,7 @@ import com.example.demo.ExceptionHandler.MailGatewayException;
 import com.example.demo.Mail.GmailOAuth2Sender;
 import com.example.demo.Repository.EmailRepository;
 import com.example.demo.Repository.StudentRepository;
+import com.example.demo.Repository.TeacherRepository;
 import com.example.demo.Service.EmailService;
 import com.example.demo.Service.GoogleTokenService;
 import com.example.demo.Service.NotificationService;
@@ -33,23 +34,36 @@ public class EmailServiceImpl implements EmailService {
     private final GmailOAuth2Sender gmailSender;
     private final NotificationService notificationService;
     private final TemplateEngine templateEngine;
-    public EmailServiceImpl(EmailRepository repository,StudentRepository studentRepository,GoogleTokenService googleTokenService,GmailOAuth2Sender gmailSender,NotificationService notificationService,TemplateEngine templateEngine)
-    {
-        this.repository=repository;
-        this.gmailSender=gmailSender;
-        this.googleTokenService=googleTokenService;
-        this.notificationService=notificationService;
-        this.studentRepository=studentRepository;
-        this.templateEngine=templateEngine;
+    private final TeacherRepository teacherRepository;
+
+    public EmailServiceImpl(EmailRepository repository,
+                            StudentRepository studentRepository,
+                            TeacherRepository teacherRepository,   // ✅ new
+                            GoogleTokenService googleTokenService,
+                            GmailOAuth2Sender gmailSender,
+                            NotificationService notificationService,
+                            TemplateEngine templateEngine) {
+        this.repository = repository;
+        this.gmailSender = gmailSender;
+        this.googleTokenService = googleTokenService;
+        this.notificationService = notificationService;
+        this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;   // ✅ new
+        this.templateEngine = templateEngine;
     }
+
 
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
 
     @Override
     public EmailDTO sendEmail(String toEmail, String subject, String body) {
-        studentRepository.findByEmail(toEmail)
-                .orElseThrow(() -> new EmailNotFoundException("No student found with email: " + toEmail));
+        boolean isStudent = studentRepository.findByEmail(toEmail).isPresent();
+        boolean isTeacher = teacherRepository.findByEmail(toEmail).isPresent();
+
+        if (!isStudent && !isTeacher) {
+            throw new EmailNotFoundException("No student/teacher found with email: " + toEmail);
+        }
 
         boolean alreadySent = repository.existsByToEmailAndSubjectAndBodyAndStatus(
                 toEmail, subject, body, EmailStatus.SENT);
@@ -84,6 +98,7 @@ public class EmailServiceImpl implements EmailService {
         repository.save(notification);
         return mapToDTO(notification);
     }
+
 
 
     @Override

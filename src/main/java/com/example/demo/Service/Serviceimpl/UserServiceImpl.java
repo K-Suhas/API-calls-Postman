@@ -3,7 +3,9 @@ package com.example.demo.Service.Serviceimpl;
 import com.example.demo.DTO.UserDTO;
 import com.example.demo.Domain.UserDomain;
 import com.example.demo.Enum.Role;
+import com.example.demo.ExceptionHandler.DuplicateEmailException;
 import com.example.demo.Mapper.UserMapper;
+import com.example.demo.Repository.TeacherRepository;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.UserService;
 import org.springframework.stereotype.Service;
@@ -18,9 +20,11 @@ import org.springframework.beans.factory.annotation.Value;
 @Service
 public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
-    public UserServiceImpl(UserRepository userRepository)
-    {
-        this.userRepository=userRepository;
+    private final TeacherRepository teacherRepository;
+
+    public UserServiceImpl(UserRepository userRepository, TeacherRepository teacherRepository) {
+        this.userRepository = userRepository;
+        this.teacherRepository = teacherRepository;
     }
 
     @Value("${google.clientId}")
@@ -52,13 +56,22 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO loginOrRegisterGoogleUser(String email, String name) {
         Optional<UserDomain> existing = userRepository.findByEmail(email);
+
         UserDomain user = existing.orElseGet(() -> {
             UserDomain newUser = new UserDomain();
             newUser.setEmail(email);
             newUser.setName(name);
-            newUser.setRole(Role.STUDENT);
+
+
+            if (teacherRepository.findByEmail(email).isPresent()) {
+                newUser.setRole(Role.TEACHER);
+            } else {
+                newUser.setRole(Role.STUDENT);
+            }
+
             return userRepository.save(newUser);
         });
+
         return UserMapper.toDTO(user);
     }
 
@@ -75,6 +88,21 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .map(UserMapper::toDTO);
     }
+    @Override
+    public UserDTO addAdmin(UserDTO userDTO) {
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+            throw new DuplicateEmailException("Email already exists");
+        }
+
+        UserDomain user = new UserDomain();
+        user.setName(userDTO.getName());
+        user.setEmail(userDTO.getEmail());
+        user.setRole(Role.valueOf("ADMIN"));
+
+        return UserMapper.toDTO(userRepository.save(user));
+    }
+
+
 }
 
 
