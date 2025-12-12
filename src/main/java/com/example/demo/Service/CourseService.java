@@ -14,6 +14,9 @@ public interface CourseService {
     Page<CourseDTO> getAllCourses(Pageable pageable);
     String updateCourse(Long id, CourseDTO course);
     String deleteCourse(Long id);
+
+    List<CourseDTO> getCoursesForStudentRole(String email);
+
     Page<CourseDTO> searchCourses(String query, Pageable pageable);
     Page<CourseDTO> searchCoursesByDepartment(String query, Long departmentId, Pageable pageable);
 

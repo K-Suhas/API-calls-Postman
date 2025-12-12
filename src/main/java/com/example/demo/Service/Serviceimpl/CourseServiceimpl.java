@@ -4,11 +4,13 @@ import com.example.demo.DTO.CourseDTO;
 import com.example.demo.DTO.DepartmentDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.DepartmentDomain;
+import com.example.demo.Domain.StudentDomain;
 import com.example.demo.ExceptionHandler.DuplicateResourceException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Mapper.CourseMapper;
 import com.example.demo.Repository.CourseRepository;
 import com.example.demo.Repository.DepartmentRepository;
+import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Service.CourseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +22,12 @@ import java.util.List;
 public class CourseServiceimpl implements CourseService {
     private final CourseRepository courseRepository;
     private final DepartmentRepository departmentRepository;
+    private final StudentRepository studentRepository;
 
     public CourseServiceimpl(CourseRepository courseRepository,
-                             DepartmentRepository departmentRepository) {
+                             DepartmentRepository departmentRepository,StudentRepository studentRepository) {
         this.courseRepository = courseRepository;
+        this.studentRepository = studentRepository;
         this.departmentRepository = departmentRepository;
     }
 
@@ -93,6 +97,19 @@ public class CourseServiceimpl implements CourseService {
         courseRepository.delete(existing);
         return "Course deleted: " + existing.getName();
     }
+    @Override
+    public List<CourseDTO> getCoursesForStudentRole(String email) {
+        StudentDomain student = studentRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with email: " + email));
+
+        Long deptId = student.getDepartment().getId();
+
+        return courseRepository.findByDepartment_Id(deptId)
+                .stream()
+                .map(CourseMapper::toDTO)
+                .toList();
+    }
+
 
     @Override
     public Page<CourseDTO> searchCourses(String query, Pageable pageable) {

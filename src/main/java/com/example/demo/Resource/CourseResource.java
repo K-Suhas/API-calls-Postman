@@ -4,7 +4,9 @@ package com.example.demo.Resource;
 import com.example.demo.DTO.CourseDTO;
 import com.example.demo.DTO.DepartmentDTO;
 import com.example.demo.Domain.DepartmentDomain;
+import com.example.demo.Enum.Role;
 import com.example.demo.Service.CourseService;
+import com.example.demo.Service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,9 +22,11 @@ import java.util.List;
 public class CourseResource {
 
     private final CourseService courseService;
+    private final UserService userService;  // ✅ injected bean
 
-    public CourseResource(CourseService courseService) {
+    public CourseResource(CourseService courseService, UserService userService) {
         this.courseService = courseService;
+        this.userService = userService;
     }
 
     @PostMapping
@@ -86,4 +90,18 @@ public class CourseResource {
     public ResponseEntity<List<CourseDTO>> getByDepartment(@PathVariable Long deptId) {
         return ResponseEntity.ok(courseService.getCoursesByDepartment(deptId));
     }
+
+    @GetMapping("/restricted-courses")
+    public ResponseEntity<?> getCoursesRestricted(@RequestParam String email,
+                                                  @RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "10") int size) {
+        Role role = userService.getUserRole(email);
+        if (role == Role.STUDENT) {
+            return ResponseEntity.ok(courseService.getCoursesForStudentRole(email));
+        }
+        // ✅ supply a Pageable
+        return ResponseEntity.ok(courseService.getAllCourses(PageRequest.of(page, size)));
+    }
+
+
 }

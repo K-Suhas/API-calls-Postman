@@ -118,8 +118,18 @@ public class StudentServiceImpl implements StudentService {
 
         return results.map(StudentMapper::toDTO);
     }
+    @Override
+    public Page<StudentDTO> getStudentsForStudentRole(String email, Pageable pageable) {
+        // Find the logged-in student by email
+        StudentDomain student = studentRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with email: " + email));
 
+        Long deptId = student.getDepartment().getId();
 
+        // Return only students from the same department
+        return studentRepository.findByDepartment_Id(deptId, pageable)
+                .map(StudentMapper::toDTO);
+    }
 
 
     // ✅ UPDATE STUDENT

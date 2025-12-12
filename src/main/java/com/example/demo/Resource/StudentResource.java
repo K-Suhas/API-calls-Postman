@@ -8,6 +8,7 @@ import com.example.demo.Service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -98,6 +99,18 @@ public class StudentResource {
         }
         return ResponseEntity.ok(Map.of("message", "Students uploaded successfully"));
     }
+    @GetMapping("/restricted")
+    public ResponseEntity<Page<StudentDTO>> getStudentsRestricted(@RequestParam String email, Pageable pageable) {
+        Role role = userService.getUserRole(email);
+        if (role == Role.STUDENT) {
+            Page<StudentDTO> page = studentService.getStudentsForStudentRole(email, pageable);
+            return ResponseEntity.ok(page);
+        }
+        // For non-students, fallback to existing getAllStudents
+        Page<StudentDTO> page = studentService.getallstudent(pageable);
+        return ResponseEntity.ok(page);
+    }
+
 
 
 
