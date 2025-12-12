@@ -3,13 +3,14 @@ package com.example.demo.ExceptionHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.stream.Collectors;
 
-
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -31,7 +32,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateEmailException ex) {
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
@@ -48,7 +49,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(HttpStatus.BAD_GATEWAY.value(), ex.getMessage()));
     }
 
-    // Keep a generic fallback if needed
     @ExceptionHandler(EmailFailedException.class)
     public ResponseEntity<ErrorResponse> handleEmailFailed(EmailFailedException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -61,21 +61,29 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid marks entry: " + ex.getMessage()));
     }
 
+    // ✅ Bean Validation (@Valid) errors → concise messages
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .findFirst()
-                .orElse("Invalid input");
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(this::formatFieldError)
+                .collect(Collectors.joining("; "));
+        if (message.isBlank()) message = "Invalid input";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), errorMessage));
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message));
     }
 
+    private String formatFieldError(FieldError error) {
+        // e.g., "name: Name is required"
+        return error.getField() + ": " + error.getDefaultMessage();
+    }
+
+    // ✅ Simplified JSON parse errors
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableJson(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid JSON input: " + ex.getMessage()));
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid JSON input"));
     }
+
     @ExceptionHandler(TokenRefreshException.class)
     public ResponseEntity<ErrorResponse> handleTokenRefresh(TokenRefreshException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -88,20 +96,18 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
     }
 
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Something went wrong: " + ex.getMessage()));
-    }
-
     @ExceptionHandler(BulkValidationException.class)
     public ResponseEntity<ErrorResponse> handleBulkValidation(BulkValidationException ex) {
-        // Combine all row errors into a single string
         String combinedErrors = String.join("; ", ex.getErrors());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), combinedErrors));
     }
 
-
+    // ✅ Generic fallback
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "Something went wrong: " + ex.getMessage()));
+    }
 }

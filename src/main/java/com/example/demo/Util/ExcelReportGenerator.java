@@ -1,4 +1,3 @@
-// src/main/java/com/example/demo/Util/ExcelReportGenerator.java
 package com.example.demo.Util;
 
 import com.example.demo.DTO.StudentReportRowDTO;
@@ -50,7 +49,7 @@ public class ExcelReportGenerator {
                 int col = 0;
                 row.createCell(col++).setCellValue(r.getId());
                 row.createCell(col++).setCellValue(r.getName());
-                row.createCell(col++).setCellValue(r.getDept());
+                row.createCell(col++).setCellValue(r.getDepartmentName());  // ✅ FIXED
                 row.createCell(col++).setCellValue(r.getEmail());
                 row.createCell(col++).setCellValue(r.getDob() != null ? r.getDob().toString() : "");
                 row.createCell(col++).setCellValue(String.join(", ", r.getCourseNames()));

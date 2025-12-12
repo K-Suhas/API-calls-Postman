@@ -31,27 +31,20 @@ public class ReportServiceImpl implements ReportService {
         this.studentRepository = studentRepository;
     }
 
-    // In-memory job storage
     private final Map<String, ReportJobStatusDTO> jobs = new ConcurrentHashMap<>();
     private final Map<String, byte[]> jobFiles = new ConcurrentHashMap<>();
 
-    // Constant for common state
     private static final String STATE_RUNNING = "RUNNING";
-
-    // ===== Bulk CSV job API =====
 
     @Override
     public String startCsvReportJob(Integer semester) {
         String jobId = UUID.randomUUID().toString();
         jobs.put(jobId, new ReportJobStatusDTO(jobId, 0, "PENDING", "Queued"));
 
-        // Use virtual thread for blocking I/O and sleeps
         Thread.ofVirtual().start(() -> runCsvReportJob(jobId, semester));
-
         return jobId;
     }
 
-    // Extracted method to reduce cognitive complexity
     private void runCsvReportJob(String jobId, Integer semester) {
         try {
             update(jobId, 25, STATE_RUNNING, "Fetching students");
@@ -79,16 +72,14 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
-    // Helper: fetch students with courses if available
     private List<StudentDomain> fetchStudents() {
         try {
             return studentRepository.findAllWithCourses();
-        } catch (Exception _) { // unnamed pattern instead of "ignored"
+        } catch (Exception _) {
             return studentRepository.findAll();
         }
     }
 
-    // Helper: fetch marks grouped by student, filtered by semester if provided
     private Map<Long, List<MarksDomain>> fetchMarksByStudent(Integer semester) {
         List<MarksDomain> allMarks = marksRepository.findAll();
         if (semester != null) {
@@ -100,7 +91,6 @@ public class ReportServiceImpl implements ReportService {
                 .collect(Collectors.groupingBy(m -> m.getStudent().getId()));
     }
 
-    // Helper: build CSV bytes
     private byte[] buildCsv(List<StudentDomain> students, Map<Long, List<MarksDomain>> marksByStudent) {
         StringBuilder sb = new StringBuilder();
         sb.append("ID,Name,Department,Email,DOB,Courses,Subjects,Total Marks Obtained,Percentage\n");
@@ -114,9 +104,11 @@ public class ReportServiceImpl implements ReportService {
             String courses = (s.getCourses() == null) ? "" :
                     s.getCourses().stream().map(CourseDomain::getName).sorted().collect(Collectors.joining(";"));
 
+            String departmentName = (s.getDepartment() != null) ? s.getDepartment().getName() : "";
+
             sb.append(s.getId()).append(",")
                     .append(escape(s.getName())).append(",")
-                    .append(escape(s.getDept())).append(",")
+                    .append(escape(departmentName)).append(",")
                     .append(escape(s.getEmail())).append(",")
                     .append(s.getDob() != null ? s.getDob() : "").append(",")
                     .append(escape(courses)).append(",")
@@ -129,7 +121,6 @@ public class ReportServiceImpl implements ReportService {
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    // Safe sleep with re-interrupt or rethrow strategy
     private void sleepSafely() {
         try {
             Thread.sleep(1000);
@@ -205,10 +196,12 @@ public class ReportServiceImpl implements ReportService {
                 ? Collections.emptyList()
                 : student.getCourses().stream().map(CourseDomain::getName).sorted().toList();
 
+        String departmentName = (student.getDepartment() != null) ? student.getDepartment().getName() : "";
+
         return new StudentMarksheetDTO()
                 .setId(student.getId())
                 .setName(student.getName())
-                .setDept(student.getDept())
+                .setDepartmentName(departmentName)
                 .setEmail(student.getEmail())
                 .setDob(student.getDob())
                 .setCourseNames(courseNames)
@@ -229,7 +222,7 @@ public class ReportServiceImpl implements ReportService {
         sb.append("ID,Name,Department,Email,DOB,Courses,Total Marks,Percentage\n");
         sb.append(dto.getId()).append(",")
                 .append(escape(dto.getName())).append(",")
-                .append(escape(dto.getDept())).append(",")
+                .append(escape(dto.getDepartmentName())).append(",")
                 .append(escape(dto.getEmail())).append(",")
                 .append(dto.getDob() != null ? dto.getDob() : "").append(",")
                 .append(escape(coursesJoined)).append(",")

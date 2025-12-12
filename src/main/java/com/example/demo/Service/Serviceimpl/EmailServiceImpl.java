@@ -59,7 +59,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public EmailDTO sendEmail(String toEmail, String subject, String body) {
         boolean isStudent = studentRepository.findByEmail(toEmail).isPresent();
-        boolean isTeacher = teacherRepository.findByEmail(toEmail).isPresent();
+        boolean isTeacher = teacherRepository.findByEmailIgnoreCase(toEmail).isPresent();
 
         if (!isStudent && !isTeacher) {
             throw new EmailNotFoundException("No student/teacher found with email: " + toEmail);

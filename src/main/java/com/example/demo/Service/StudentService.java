@@ -15,6 +15,11 @@ public interface StudentService  {
         String deletestudent(Long id);
         Page<StudentDTO> searchStudents(String query, Pageable pageable);
         List<String> addStudentsInBulk(BulkStudentDTO bulkDto);
+        Page<StudentDTO> getStudentsByDepartment(Long departmentId, Pageable pageable);
+
+
+    String createstudentForDepartment(StudentDTO student, Long departmentId);
+
 
 
 

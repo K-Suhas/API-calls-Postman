@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
             newUser.setName(name);
 
 
-            if (teacherRepository.findByEmail(email).isPresent()) {
+            if (teacherRepository.findByEmailIgnoreCase(email).isPresent()) {
                 newUser.setRole(Role.TEACHER);
             } else {
                 newUser.setRole(Role.STUDENT);

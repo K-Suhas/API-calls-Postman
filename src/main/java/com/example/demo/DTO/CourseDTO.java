@@ -1,11 +1,8 @@
+// src/main/java/com/example/demo/DTO/CourseDTO.java
 package com.example.demo.DTO;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.util.List;
@@ -15,12 +12,16 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(chain = true)
-@JsonIgnoreProperties(ignoreUnknown = false)
 public class CourseDTO {
+
+    private Long id;
+
     @NotBlank(message = "Course name must not be blank")
     private String name;
-    private Long id;
-    private List<String> studentNames;  // For output (displaying enrolled students)
 
+    // ✅ Required on create; locked on update
+    private Long departmentId;
+    private String departmentName;
 
+    private List<String> studentNames;
 }

@@ -14,7 +14,7 @@ import java.util.List;
 public class StudentReportRowDTO {
     private Long id;
     private String name;
-    private String dept;
+    private String departmentName;
     private String email;
     private LocalDate dob;
     private List<String> courseNames;

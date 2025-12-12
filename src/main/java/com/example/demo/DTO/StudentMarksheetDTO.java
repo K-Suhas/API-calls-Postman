@@ -15,7 +15,8 @@ import java.util.List;
 public class StudentMarksheetDTO {
     private Long id;
     private String name;
-    private String dept;
+    private String departmentName;
+
     private String email;
     private LocalDate dob;
     // If a student has multiple courses, we store all names

@@ -1,8 +1,10 @@
+// src/main/java/com/example/demo/Domain/StudentDomain.java
 package com.example.demo.Domain;
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
+
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,25 +15,25 @@ import java.util.Set;
 @Setter
 @Accessors(chain = true)
 @Entity
-@Table(name="Student")
+@Table(name = "Student")
 public class StudentDomain {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id", nullable = false)
     private Long id;
 
     @Column(name="name", nullable = false)
     private String name;
 
-    @Column(name="dept", nullable = false)
-    private String dept;
+    @Column(name="email", nullable = false, unique = true)
+    private String email;
 
     @Column(name = "dob", nullable = false)
     private LocalDate dob;
 
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
-
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private DepartmentDomain department;
 
     @ManyToMany
     @JoinTable(

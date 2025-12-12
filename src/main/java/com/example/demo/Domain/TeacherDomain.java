@@ -1,3 +1,4 @@
+// src/main/java/com/example/demo/Domain/TeacherDomain.java
 package com.example.demo.Domain;
 
 import jakarta.persistence.*;
@@ -8,10 +9,11 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Getter
 @Setter
-@Entity
 @Accessors(chain = true)
+@Entity
 @Table(name = "Teacher")
 public class TeacherDomain {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,6 +24,7 @@ public class TeacherDomain {
     @Column(name="name", nullable = false)
     private String name;
 
-    @Column(name="dept")
-    private String dept;
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private DepartmentDomain department;
 }
