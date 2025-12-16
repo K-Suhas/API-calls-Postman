@@ -5,10 +5,13 @@ import com.example.demo.Domain.MarksDomain;
 
 public class MarksMapper {
     private MarksMapper() {
-        throw new UnsupportedOperationException("Utility class should not be instantiated");
     }
+
     public static MarksDTO toDTO(MarksDomain marks) {
-        return new MarksDTO(marks.getSubjectName(), marks.getMarksObtained());
+        return new MarksDTO(
+                marks.getSubject().getId(),
+                marks.getSubject().getName(),
+                marks.getMarksObtained()
+        );
     }
 }
-

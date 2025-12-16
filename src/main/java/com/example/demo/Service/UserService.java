@@ -10,7 +10,8 @@ public interface UserService {
     UserDTO authenticateWithGoogle(String idTokenString);
     Optional<UserDTO> findByEmail(String email);
     Role getUserRole(String email);
-
+    Optional<Long> getDepartmentIdForTeacher(String email);
     UserDTO addAdmin(UserDTO userDTO);
+    Optional<Long> getDepartmentIdForStudent(String email);
 }
 

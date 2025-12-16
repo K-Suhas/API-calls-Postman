@@ -1,5 +1,6 @@
 package com.example.demo.ExceptionHandler;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -75,6 +76,10 @@ public class GlobalExceptionHandler {
     private String formatFieldError(FieldError error) {
         // e.g., "name: Name is required"
         return error.getField() + ": " + error.getDefaultMessage();
+    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<String> handleDuplicateKey(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(409).body("Duplicate marks entry not allowed");
     }
 
     // ✅ Simplified JSON parse errors

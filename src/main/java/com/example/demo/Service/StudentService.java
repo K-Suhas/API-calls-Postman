@@ -11,17 +11,13 @@ public interface StudentService  {
         String createstudent(StudentDTO student);
         StudentDTO getstudentbyid(Long id);
         Page<StudentDTO> getallstudent(Pageable pageable);
-
-    Page<StudentDTO> getStudentsForStudentRole(String email, Pageable pageable);
-
-    String updatestudent(Long id, StudentDTO student);
+        Page<StudentDTO> getStudentsForStudentRole(String email, Pageable pageable);
+        String updatestudent(Long id, StudentDTO student);
         String deletestudent(Long id);
         Page<StudentDTO> searchStudents(String query, Pageable pageable);
         List<String> addStudentsInBulk(BulkStudentDTO bulkDto);
         Page<StudentDTO> getStudentsByDepartment(Long departmentId, Pageable pageable);
-
-
-    String createstudentForDepartment(StudentDTO student, Long departmentId);
+        String createstudentForDepartment(StudentDTO student, Long departmentId);
 
 
 

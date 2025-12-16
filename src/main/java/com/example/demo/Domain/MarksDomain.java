@@ -1,3 +1,4 @@
+// src/main/java/com/example/demo/Domain/MarksDomain.java
 package com.example.demo.Domain;
 
 import jakarta.persistence.*;
@@ -6,7 +7,7 @@ import lombok.experimental.Accessors;
 
 @Entity
 @Table(name = "Marks", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"student_id", "subjectName", "semester"})
+        @UniqueConstraint(columnNames = {"student_id", "subject_id", "semester"})
 })
 @Getter
 @Setter
@@ -23,11 +24,12 @@ public class MarksDomain {
     @JoinColumn(name = "student_id")
     private StudentDomain student;
 
-    @Column(nullable = false)
-    private String subjectName; // DBMS, DAA, etc.
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "subject_id")
+    private SubjectDomain subject;
 
     @Column(nullable = false)
-    private int marksObtained; // 0–100
+    private int marksObtained;
 
     @Column(nullable = false)
     private int semester;

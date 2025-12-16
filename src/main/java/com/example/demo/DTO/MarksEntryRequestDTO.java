@@ -1,3 +1,4 @@
+// src/main/java/com/example/demo/DTO/MarksEntryRequestDTO.java
 package com.example.demo.DTO;
 
 import lombok.*;
@@ -13,5 +14,5 @@ import java.util.List;
 public class MarksEntryRequestDTO {
     private Long studentId;
     private int semester;
-    private List<MarksDTO> subjects; // Each subjectName + marksObtained
+    private List<MarksDTO> subjects;
 }

@@ -189,7 +189,10 @@ public class ReportServiceImpl implements ReportService {
         double percentage = total / (marks.size() * 1.0);
 
         List<MarksDTO> subjects = marks.stream()
-                .map(m -> new MarksDTO(m.getSubjectName(), m.getMarksObtained()))
+                .map(m -> new MarksDTO(
+                        m.getSubject().getId(),
+                        m.getSubject().getName(),
+                        m.getMarksObtained()))
                 .toList();
 
         List<String> courseNames = (student.getCourses() == null)

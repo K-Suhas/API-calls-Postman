@@ -1,86 +1,182 @@
+// src/main/java/com/example/demo/Service/Serviceimpl/MarksServiceImpl.java
 package com.example.demo.Service.Serviceimpl;
 
 import com.example.demo.DTO.*;
-
 import com.example.demo.Domain.MarksDomain;
 import com.example.demo.Domain.StudentDomain;
-import com.example.demo.ExceptionHandler.DuplicateResourceException;
+import com.example.demo.Domain.SubjectDomain;
+import com.example.demo.Enum.Role;
 import com.example.demo.ExceptionHandler.InvalidMarksException;
 import com.example.demo.ExceptionHandler.ResourceNotFoundException;
+import com.example.demo.Mapper.MarksMapper;
 import com.example.demo.Repository.MarksRepository;
 import com.example.demo.Repository.StudentRepository;
+import com.example.demo.Repository.SubjectRepository;
 import com.example.demo.Service.MarksService;
+import com.example.demo.Service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class MarksServiceImpl implements MarksService {
+
+    private static final Logger log = LoggerFactory.getLogger(MarksServiceImpl.class);
+
     private final MarksRepository marksRepository;
     private final StudentRepository studentRepository;
-    public MarksServiceImpl(MarksRepository marksRepository,StudentRepository studentRepository)
-    {
-        this.marksRepository=marksRepository;
-        this.studentRepository=studentRepository;
+    private final SubjectRepository subjectRepository;
+    private final UserService userService;
+
+    public MarksServiceImpl(MarksRepository marksRepository,
+                            StudentRepository studentRepository,
+                            SubjectRepository subjectRepository,
+                            UserService userService) {
+        this.marksRepository = marksRepository;
+        this.studentRepository = studentRepository;
+        this.subjectRepository = subjectRepository;
+        this.userService = userService;
     }
 
-    private static final List<String> VALID_SUBJECTS = List.of("DBMS", "DATA STRUCTURES", "DAA", "ADE", "MES");
+    private void enforceRoleForStudent(String requesterEmail, StudentDomain student) {
+        Role role = userService.getUserRole(requesterEmail);
+        if (role == Role.ADMIN) return;
+        if (role == Role.TEACHER) {
+            Long teacherDeptId = userService.getDepartmentIdForTeacher(requesterEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher department not found"));
+            if (!Objects.equals(student.getDepartment().getId(), teacherDeptId)) {
+                // Updated message: block viewing and editing across departments
+                throw new InvalidMarksException("You are not allowed to view subjects of a different department");
+            }
+            return;
+        }
+        throw new InvalidMarksException("Only admin/teacher can manage marks");
+    }
 
     @Override
-    public void createAllMarks(MarksEntryRequestDTO request) {
+    @Transactional
+    public void createAllMarks(MarksEntryRequestDTO request, String requesterEmail) {
         Long studentId = request.getStudentId();
         int semester = request.getSemester();
+
+        log.info("Bulk marks upload requested by={} for studentId={}, semester={}",
+                requesterEmail, studentId, semester);
 
         StudentDomain student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
 
-        for (MarksDTO dto : request.getSubjects()) {
-            String subject = dto.getSubjectName().toUpperCase();
-            int marks = dto.getMarksObtained();
+        enforceRoleForStudent(requesterEmail, student);
 
-            if (!VALID_SUBJECTS.contains(subject)) {
-                throw new InvalidMarksException("Invalid subject: " + subject);
-            }
-            if (marks < 0 || marks > 100) {
-                throw new InvalidMarksException("Marks must be between 0 and 100 for " + subject);
-            }
+        List<SubjectDomain> subjects = subjectRepository.findByDepartment_IdAndSemester(
+                student.getDepartment().getId(), semester);
 
-            Optional<MarksDomain> existing = marksRepository.findByStudentIdAndSubjectNameAndSemester(studentId, subject, semester);
-            if (existing.isPresent()) {
-                throw new DuplicateResourceException("Marks have already been uploaded for one or more subjects in semester " + semester);
-
-            }
-
-            MarksDomain marksDomain = new MarksDomain()
-                    .setStudent(student)
-                    .setSubjectName(subject)
-                    .setMarksObtained(marks)
-                    .setSemester(semester);
-
-            marksRepository.save(marksDomain);
+        if (subjects.isEmpty()) {
+            throw new ResourceNotFoundException("No subjects configured for this department in semester " + semester);
         }
+
+        Map<Long, SubjectDomain> byId = subjects.stream()
+                .collect(Collectors.toMap(SubjectDomain::getId, s -> s));
+        Map<String, SubjectDomain> byName = subjects.stream()
+                .collect(Collectors.toMap(s -> s.getName().trim().toLowerCase(), s -> s));
+
+        for (MarksDTO dto : request.getSubjects()) {
+            SubjectDomain subject = resolveSubject(dto, byId, byName);
+
+            int marks = dto.getMarksObtained();
+            if (marks < 0 || marks > 100) {
+                throw new InvalidMarksException("Marks must be between 0 and 100 for " + subject.getName());
+            }
+
+            log.info("Upsert check → studentId={}, subjectId={}, semester={}, marks={}",
+                    studentId, subject.getId(), semester, marks);
+
+            Optional<MarksDomain> existingOpt =
+                    marksRepository.findByStudentIdAndSubject_IdAndSemester(studentId, subject.getId(), semester);
+
+            if (existingOpt.isPresent()) {
+                MarksDomain existing = existingOpt.get();
+                log.info("Existing row found: id={} → updating marks from {} to {}",
+                        existing.getId(), existing.getMarksObtained(), marks);
+                existing.setMarksObtained(marks);
+                marksRepository.save(existing);
+            } else {
+                log.info("No existing row found → inserting new marks row");
+                MarksDomain md = new MarksDomain()
+                        .setStudent(student)
+                        .setSubject(subject)
+                        .setMarksObtained(marks)
+                        .setSemester(semester);
+                marksRepository.save(md);
+            }
+        }
+
+        log.info("Bulk marks upload completed for studentId={}, semester={}", studentId, semester);
     }
 
+    @Override
+    public void updateMarks(Long studentId, int semester, Long subjectId, int newMarks, String requesterEmail) {
+        log.info("Update marks requested by={} for studentId={}, subjectId={}, semester={}, newMarks={}",
+                requesterEmail, studentId, subjectId, semester, newMarks);
+
+        StudentDomain student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+        enforceRoleForStudent(requesterEmail, student);
+
+        MarksDomain existing = marksRepository.findByStudentIdAndSubject_IdAndSemester(studentId, subjectId, semester)
+                .orElseThrow(() -> new ResourceNotFoundException("Marks not found"));
+
+        if (newMarks < 0 || newMarks > 100) {
+            throw new InvalidMarksException("Marks must be between 0 and 100");
+        }
+
+        existing.setMarksObtained(newMarks);
+        marksRepository.save(existing);
+
+        log.info("Marks updated: rowId={}, newMarks={}", existing.getId(), newMarks);
+    }
 
     @Override
-    public MarksResponseDTO getMarksheet(Long studentId, int semester, Pageable pageable) {
-        Page<MarksDomain> pageData = marksRepository.findByStudentIdAndSemester(studentId, semester, pageable);
+    public MarksResponseDTO getMarksheet(Long studentId, int semester, Pageable pageable, String requesterEmail) {
+        log.info("Marksheet requested by={} for studentId={}, semester={}, page={}, size={}",
+                requesterEmail, studentId, semester, pageable.getPageNumber(), pageable.getPageSize());
 
+        StudentDomain student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        Role role = userService.getUserRole(requesterEmail);
+        if (role == Role.STUDENT) {
+            Long studentDeptId = userService.getDepartmentIdForStudent(requesterEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("Student department not found"));
+            if (!Objects.equals(student.getDepartment().getId(), studentDeptId)) {
+                throw new InvalidMarksException("Students can only view marks of their own department");
+            }
+        }
+        else if (role == Role.TEACHER) {
+            Long teacherDeptId = userService.getDepartmentIdForTeacher(requesterEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher department not found"));
+            if (!Objects.equals(student.getDepartment().getId(), teacherDeptId)) {
+                // Updated message to prevent subject viewing at search time
+                throw new InvalidMarksException("You are not allowed to view subjects of a different department");
+            }
+        }
+
+        Page<MarksDomain> pageData = marksRepository.findByStudentIdAndSemester(studentId, semester, pageable);
         if (pageData.isEmpty()) {
             throw new ResourceNotFoundException("No marks found");
         }
 
         List<MarksDTO> subjects = pageData.getContent().stream()
-                .map(m -> new MarksDTO(m.getSubjectName(), m.getMarksObtained()))
+                .map(MarksMapper::toDTO)
                 .toList();
 
         int total = subjects.stream().mapToInt(MarksDTO::getMarksObtained).sum();
-        double percentage = total / (subjects.size() * 1.0);
+        double percentage = subjects.isEmpty() ? 0.0 : total / (subjects.size() * 1.0);
 
         return new MarksResponseDTO()
                 .setSubjects(subjects)
@@ -91,31 +187,43 @@ public class MarksServiceImpl implements MarksService {
                 .setTotalPages(pageData.getTotalPages())
                 .setTotalElements(pageData.getTotalElements());
     }
-    @Override
-    public void updateMarks(Long studentId, int semester, String subjectName, int newMarks) {
-        MarksDomain existing = marksRepository
-                .findByStudentIdAndSubjectNameAndSemester(studentId, subjectName.toUpperCase(), semester)
-                .orElseThrow(() -> new ResourceNotFoundException("Marks not found"));
 
-        if (newMarks < 0 || newMarks > 100) {
-            throw new InvalidMarksException("Marks must be between 0 and 100");
-        }
-
-        existing.setMarksObtained(newMarks);
-        marksRepository.save(existing);
-    }
     @Override
-    public void deleteAllMarks(Long studentId, int semester) {
+    public void deleteAllMarks(Long studentId, int semester, String requesterEmail) {
+        log.info("Delete all marks requested by={} for studentId={}, semester={}", requesterEmail, studentId, semester);
+
+        StudentDomain student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+        enforceRoleForStudent(requesterEmail, student);
+
         List<MarksDomain> marksList = marksRepository.findByStudentIdAndSemester(studentId, semester);
         if (marksList.isEmpty()) {
             throw new ResourceNotFoundException("No marks found for student " + studentId + " in semester " + semester);
         }
         marksRepository.deleteAll(marksList);
+
+        log.info("Deleted {} marks rows for studentId={}, semester={}", marksList.size(), studentId, semester);
     }
+
     @Override
-    public Page<StudentMarksSummaryDTO> getPaginatedStudentSummary(Pageable pageable) {
-        Page<StudentMarksProjection> rawPage = marksRepository.getStudentTotals(pageable);
-        return rawPage.map(p -> new StudentMarksSummaryDTO(p.getStudentId(), p.getName(), p.getTotal(), p.getCount()));
+    public Page<StudentMarksSummaryDTO> getPaginatedStudentSummary(Pageable pageable, String requesterEmail) {
+        Role role = userService.getUserRole(requesterEmail);
+        if (role == Role.ADMIN) {
+            return marksRepository.getStudentTotals(pageable)
+                    .map(p -> new StudentMarksSummaryDTO(p.getStudentId(), p.getName(), p.getTotal(), p.getCount()));
+        } else if (role == Role.TEACHER) {
+            Long deptId = userService.getDepartmentIdForTeacher(requesterEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher department not found"));
+            return marksRepository.getStudentTotalsByDepartment(deptId, pageable)
+                    .map(p -> new StudentMarksSummaryDTO(p.getStudentId(), p.getName(), p.getTotal(), p.getCount()));
+        } else if (role == Role.STUDENT) {
+            Long deptId = userService.getDepartmentIdForStudent(requesterEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("Student department not found"));
+            return marksRepository.getStudentTotalsByDepartment(deptId, pageable)
+                    .map(p -> new StudentMarksSummaryDTO(p.getStudentId(), p.getName(), p.getTotal(), p.getCount()));
+        } else {
+            throw new InvalidMarksException("Unauthorized role");
+        }
     }
     @Override
     public Map<String, PercentageGroupDTO> getPercentageDistribution() {
@@ -137,4 +245,23 @@ public class MarksServiceImpl implements MarksService {
                 ));
     }
 
+    private SubjectDomain resolveSubject(MarksDTO dto,
+                                         Map<Long, SubjectDomain> byId,
+                                         Map<String, SubjectDomain> byName) {
+        if (dto.getSubjectId() != null) {
+            SubjectDomain s = byId.get(dto.getSubjectId());
+            if (s == null) {
+                throw new InvalidMarksException("Subject not in student's department/semester");
+            }
+            return s;
+        } else if (dto.getSubjectName() != null && !dto.getSubjectName().isBlank()) {
+            SubjectDomain s = byName.get(dto.getSubjectName().trim().toLowerCase());
+            if (s == null) {
+                throw new InvalidMarksException("Subject not in student's department/semester");
+            }
+            return s;
+        } else {
+            throw new InvalidMarksException("Subject must be provided");
+        }
+    }
 }

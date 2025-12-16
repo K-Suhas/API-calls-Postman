@@ -5,6 +5,7 @@ import com.example.demo.Domain.UserDomain;
 import com.example.demo.Enum.Role;
 import com.example.demo.ExceptionHandler.DuplicateEmailException;
 import com.example.demo.Mapper.UserMapper;
+import com.example.demo.Repository.StudentRepository;
 import com.example.demo.Repository.TeacherRepository;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.UserService;
@@ -21,10 +22,12 @@ import org.springframework.beans.factory.annotation.Value;
 public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private final TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
 
-    public UserServiceImpl(UserRepository userRepository, TeacherRepository teacherRepository) {
+    public UserServiceImpl(UserRepository userRepository, TeacherRepository teacherRepository,StudentRepository studentRepository) {
         this.userRepository = userRepository;
         this.teacherRepository = teacherRepository;
+        this.studentRepository = studentRepository;
     }
 
     @Value("${google.clientId}")
@@ -101,6 +104,18 @@ public class UserServiceImpl implements UserService {
 
         return UserMapper.toDTO(userRepository.save(user));
     }
+    @Override
+    public Optional<Long> getDepartmentIdForTeacher(String email) {
+        return teacherRepository.findByEmailIgnoreCase(email)
+                .map(t -> t.getDepartment().getId());
+    }
+
+    @Override
+    public Optional<Long> getDepartmentIdForStudent(String email) {
+        return studentRepository.findByEmail(email)
+                .map(s -> s.getDepartment().getId());
+    }
+
 
 
 }
