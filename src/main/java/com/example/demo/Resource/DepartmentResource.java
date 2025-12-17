@@ -39,4 +39,14 @@ public class DepartmentResource {
         departmentService.deleteDepartment(id);
         return ResponseEntity.noContent().build();
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<DepartmentDTO> update(@PathVariable Long id, @RequestBody DepartmentDTO dto) {
+        return ResponseEntity.ok(departmentService.updateDepartment(id, dto));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<DepartmentDTO> searchByName(@RequestParam String name) {
+        return ResponseEntity.ok(departmentService.getByName(name));
+    }
+
 }

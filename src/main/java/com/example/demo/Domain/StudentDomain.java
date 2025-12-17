@@ -8,7 +8,6 @@ import lombok.experimental.Accessors;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -42,4 +41,8 @@ public class StudentDomain {
             inverseJoinColumns = @JoinColumn(name = "course_id")
     )
     private Set<CourseDomain> courses = new HashSet<>();
+
+    // 🔽 NEW: link to marks
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<MarksDomain> marks = new HashSet<>();
 }

@@ -52,4 +52,21 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id));
         repo.delete(d);
     }
+    @Override
+    public DepartmentDTO updateDepartment(Long id, DepartmentDTO dto) {
+        DepartmentDomain existing = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id));
+
+        existing.setName(dto.getName());
+        DepartmentDomain saved = repo.save(existing);
+        return DepartmentMapper.toDTO(saved);
+    }
+
+    @Override
+    public DepartmentDTO getByName(String name) {
+        DepartmentDomain d = repo.findByNameIgnoreCase(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with name " + name));
+        return DepartmentMapper.toDTO(d);
+    }
+
 }
