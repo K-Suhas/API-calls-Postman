@@ -1,6 +1,7 @@
 package com.example.demo.Resource;
 
 import com.example.demo.DTO.BulkStudentDTO;
+import com.example.demo.DTO.DepartmentDTO;
 import com.example.demo.DTO.StudentDTO;
 import com.example.demo.Enum.Role;
 import com.example.demo.Service.StudentService;
@@ -110,6 +111,14 @@ public class StudentResource {
         Page<StudentDTO> page = studentService.getallstudent(pageable);
         return ResponseEntity.ok(page);
     }
+    @GetMapping("/{id}/department")
+    public ResponseEntity<DepartmentDTO> getStudentDepartment(@PathVariable Long id) {
+        DepartmentDTO dept = studentService.getStudentDepartment(id);
+        return ResponseEntity.ok(dept);
+    }
+
+
+
 
 
 

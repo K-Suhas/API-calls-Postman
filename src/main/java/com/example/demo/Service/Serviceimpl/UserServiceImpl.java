@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
             newUser.setEmail(email);
             newUser.setName(name);
 
-
+            // ✅ Keep earlier workflow: check teacher table first
             if (teacherRepository.findByEmailIgnoreCase(email).isPresent()) {
                 newUser.setRole(Role.TEACHER);
             } else {
@@ -75,8 +75,25 @@ public class UserServiceImpl implements UserService {
             return userRepository.save(newUser);
         });
 
-        return UserMapper.toDTO(user);
+        UserDTO dto = UserMapper.toDTO(user);
+
+        // ✅ Enrich with department info
+        if (dto.getRole() == Role.STUDENT) {
+            studentRepository.findByEmail(email).ifPresent(s -> {
+                dto.setDepartmentId(s.getDepartment().getId());
+                dto.setDepartmentName(s.getDepartment().getName());
+            });
+        } else if (dto.getRole() == Role.TEACHER) {
+            teacherRepository.findByEmailIgnoreCase(email).ifPresent(t -> {
+                dto.setDepartmentId(t.getDepartment().getId());
+                dto.setDepartmentName(t.getDepartment().getName());
+            });
+        }
+
+        return dto;
     }
+
+
 
     @Override
     public Role getUserRole(String email) {
@@ -115,7 +132,6 @@ public class UserServiceImpl implements UserService {
         return studentRepository.findByEmail(email)
                 .map(s -> s.getDepartment().getId());
     }
-
 
 
 }

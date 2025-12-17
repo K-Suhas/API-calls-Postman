@@ -13,21 +13,17 @@ import java.util.Optional;
 
 public interface StudentRepository extends JpaRepository<StudentDomain, Long> {
 
-    // Search by id, name, or department (null-safe)
-    // Search only by id, name, or department (no courses)
     @Query("""
-   SELECT s FROM StudentDomain s 
-   WHERE (:id IS NOT NULL AND s.id = :id)
-      OR (:id IS NULL AND (
-            LOWER(s.name) = LOWER(:query)
-         OR LOWER(s.department.name) = LOWER(:query)
-      ))
-   """)
+       SELECT s FROM StudentDomain s 
+       WHERE (:id IS NOT NULL AND s.id = :id)
+          OR (:id IS NULL AND (
+                LOWER(s.name) = LOWER(:query)
+             OR LOWER(s.department.name) = LOWER(:query)
+          ))
+       """)
     Page<StudentDomain> searchByIdOrNameOrDept(@Param("id") Long id,
                                                @Param("query") String query,
                                                Pageable pageable);
-
-
 
     @Query(value = "SELECT * FROM Student WHERE DATE(dob) = :dob", nativeQuery = true)
     Page<StudentDomain> searchByDob(@Param("dob") LocalDate dob, Pageable pageable);
@@ -49,4 +45,7 @@ public interface StudentRepository extends JpaRepository<StudentDomain, Long> {
 
     Page<StudentDomain> findByDepartment_Id(Long deptId, Pageable pageable);
 
+    // ✅ New: fetch only department by studentId
+    @Query("SELECT s.department.id FROM StudentDomain s WHERE s.id = :studentId")
+    Long findDepartmentIdByStudentId(@Param("studentId") Long studentId);
 }

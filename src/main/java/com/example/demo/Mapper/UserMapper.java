@@ -8,8 +8,15 @@ public class UserMapper {
     private UserMapper() {
         throw new UnsupportedOperationException("Utility class should not be instantiated");
     }
+
     public static UserDTO toDTO(UserDomain user) {
-        return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        // departmentId and departmentName will be set in the service
+        return dto;
     }
 
     public static UserDomain toDomain(UserDTO dto) {
@@ -20,4 +27,3 @@ public class UserMapper {
                 .setRole(dto.getRole() != null ? dto.getRole() : Role.STUDENT);
     }
 }
-

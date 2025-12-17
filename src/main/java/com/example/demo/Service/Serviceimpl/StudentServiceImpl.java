@@ -1,6 +1,7 @@
 package com.example.demo.Service.Serviceimpl;
 
 import com.example.demo.DTO.BulkStudentDTO;
+import com.example.demo.DTO.DepartmentDTO;
 import com.example.demo.Domain.CourseDomain;
 import com.example.demo.Domain.DepartmentDomain;
 import com.example.demo.Domain.StudentDomain;
@@ -308,6 +309,14 @@ public class StudentServiceImpl implements StudentService {
         studentRepository.saveAll(toSave);
         return Collections.emptyList();
     }
+    @Override
+    public DepartmentDTO getStudentDepartment(Long studentId) {
+        StudentDomain student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("No student found with id " + studentId));
+        DepartmentDomain dept = student.getDepartment();
+        return new DepartmentDTO(dept.getId(), dept.getName());
+    }
+
 
 
 

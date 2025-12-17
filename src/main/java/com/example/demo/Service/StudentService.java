@@ -1,6 +1,7 @@
 package com.example.demo.Service;
 
 import com.example.demo.DTO.BulkStudentDTO;
+import com.example.demo.DTO.DepartmentDTO;
 import com.example.demo.DTO.StudentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +19,6 @@ public interface StudentService  {
         List<String> addStudentsInBulk(BulkStudentDTO bulkDto);
         Page<StudentDTO> getStudentsByDepartment(Long departmentId, Pageable pageable);
         String createstudentForDepartment(StudentDTO student, Long departmentId);
-
-
-
-
-
+        DepartmentDTO getStudentDepartment(Long studentId);
 }
 
