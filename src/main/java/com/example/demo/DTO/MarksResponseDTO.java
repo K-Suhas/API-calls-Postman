@@ -20,8 +20,6 @@ public class MarksResponseDTO {
     private int size;
     private int totalPages;
     private long totalElements;
-
-
 }
 
 

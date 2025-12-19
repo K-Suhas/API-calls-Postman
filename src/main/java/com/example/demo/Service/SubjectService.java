@@ -12,4 +12,5 @@ public interface SubjectService {
     String updateSubject(Long id, SubjectDTO dto);
     String deleteSubject(Long id);
 
+    List<SubjectDTO> getSubjectsByIds(List<Long> ids);
 }

@@ -39,4 +39,14 @@ public interface MarksRepository extends JpaRepository<MarksDomain, Long> {
             "WHERE m.student.department.id = :deptId " +
             "GROUP BY m.student.id, m.student.name")
     Page<StudentMarksProjection> getStudentTotalsByDepartment(Long deptId, Pageable pageable);
+
+    @Query("SELECT m FROM MarksDomain m " +
+            "WHERE m.student.id = :studentId " +
+            "AND m.semester = :semester " +
+            "AND m.subject.id IN :subjectIds")
+    Page<MarksDomain> findByStudentIdAndSemesterAndSubjectIds(Long studentId,
+                                                              int semester,
+                                                              List<Long> subjectIds,
+                                                              Pageable pageable);
+
 }

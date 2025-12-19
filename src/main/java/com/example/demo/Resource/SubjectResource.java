@@ -1,4 +1,3 @@
-// src/main/java/com/example/demo/Resource/SubjectResource.java
 package com.example.demo.Resource;
 
 import com.example.demo.DTO.SubjectDTO;
@@ -35,14 +34,19 @@ public class SubjectResource {
                                                           @RequestParam int semester) {
         return ResponseEntity.ok(subjectService.getSubjectsForStudent(studentId, semester));
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<String> updateSubject(@PathVariable Long id, @RequestBody SubjectDTO dto) {
         return ResponseEntity.ok(subjectService.updateSubject(id, dto));
     }
 
-    // ✅ Delete subject
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteSubject(@PathVariable Long id) {
         return ResponseEntity.ok(subjectService.deleteSubject(id));
+    }
+
+    @PostMapping("/by-ids")
+    public List<SubjectDTO> getSubjectsByIds(@RequestBody List<Long> ids) {
+        return subjectService.getSubjectsByIds(ids);
     }
 }

@@ -88,5 +88,13 @@ public class SubjectServiceImpl implements SubjectService {
         subjectRepository.delete(subject);
         return "Subject deleted successfully";
     }
+    @Override
+    public List<SubjectDTO> getSubjectsByIds(List<Long> ids) {
+        return subjectRepository.findAllById(ids)
+                .stream()
+                .map(SubjectMapper::toDTO)
+                .toList();
+    }
+
 
 }

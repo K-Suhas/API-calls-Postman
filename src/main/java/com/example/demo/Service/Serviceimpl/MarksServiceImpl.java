@@ -4,6 +4,7 @@ package com.example.demo.Service.Serviceimpl;
 import com.example.demo.DTO.*;
 import com.example.demo.Domain.MarksDomain;
 import com.example.demo.Domain.StudentDomain;
+import com.example.demo.Domain.StudentSubjectChoiceDomain;
 import com.example.demo.Domain.SubjectDomain;
 import com.example.demo.Enum.Role;
 import com.example.demo.ExceptionHandler.InvalidMarksException;
@@ -11,6 +12,7 @@ import com.example.demo.ExceptionHandler.ResourceNotFoundException;
 import com.example.demo.Mapper.MarksMapper;
 import com.example.demo.Repository.MarksRepository;
 import com.example.demo.Repository.StudentRepository;
+import com.example.demo.Repository.StudentSubjectChoiceRepository;
 import com.example.demo.Repository.SubjectRepository;
 import com.example.demo.Service.MarksService;
 import com.example.demo.Service.UserService;
@@ -33,15 +35,17 @@ public class MarksServiceImpl implements MarksService {
     private final StudentRepository studentRepository;
     private final SubjectRepository subjectRepository;
     private final UserService userService;
-
+    private final StudentSubjectChoiceRepository subjectChoiceRepository;
     public MarksServiceImpl(MarksRepository marksRepository,
                             StudentRepository studentRepository,
                             SubjectRepository subjectRepository,
-                            UserService userService) {
+                            UserService userService,
+                            StudentSubjectChoiceRepository subjectChoiceRepository) {
         this.marksRepository = marksRepository;
         this.studentRepository = studentRepository;
         this.subjectRepository = subjectRepository;
         this.userService = userService;
+        this.subjectChoiceRepository=subjectChoiceRepository;
     }
 
     private void enforceRoleForStudent(String requesterEmail, StudentDomain student) {
@@ -73,11 +77,15 @@ public class MarksServiceImpl implements MarksService {
 
         enforceRoleForStudent(requesterEmail, student);
 
-        List<SubjectDomain> subjects = subjectRepository.findByDepartment_IdAndSemester(
-                student.getDepartment().getId(), semester);
+        // ✅ Fetch subjects chosen by student instead of all dept subjects
+        StudentSubjectChoiceDomain choice = subjectChoiceRepository.findByStudentIdAndSemester(studentId, semester)
+                .orElseThrow(() -> new ResourceNotFoundException("Student has not chosen subjects for this semester"));
+
+        List<Long> subjectIds = choice.getSubjectIds();
+        List<SubjectDomain> subjects = subjectRepository.findAllById(subjectIds);
 
         if (subjects.isEmpty()) {
-            throw new ResourceNotFoundException("No subjects configured for this department in semester " + semester);
+            throw new ResourceNotFoundException("No subjects chosen for this semester");
         }
 
         Map<Long, SubjectDomain> byId = subjects.stream()
@@ -119,6 +127,7 @@ public class MarksServiceImpl implements MarksService {
         log.info("Bulk marks upload completed for studentId={}, semester={}", studentId, semester);
     }
 
+
     @Override
     public void updateMarks(Long studentId, int semester, Long subjectId, int newMarks, String requesterEmail) {
         log.info("Update marks requested by={} for studentId={}, subjectId={}, semester={}, newMarks={}",
@@ -127,6 +136,14 @@ public class MarksServiceImpl implements MarksService {
         StudentDomain student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
         enforceRoleForStudent(requesterEmail, student);
+
+        // ✅ Ensure subject is in student's chosen list
+        StudentSubjectChoiceDomain choice = subjectChoiceRepository.findByStudentIdAndSemester(studentId, semester)
+                .orElseThrow(() -> new ResourceNotFoundException("Student has not chosen subjects for this semester"));
+
+        if (!choice.getSubjectIds().contains(subjectId)) {
+            throw new InvalidMarksException("Subject not chosen by student for this semester");
+        }
 
         MarksDomain existing = marksRepository.findByStudentIdAndSubject_IdAndSemester(studentId, subjectId, semester)
                 .orElseThrow(() -> new ResourceNotFoundException("Marks not found"));
@@ -140,6 +157,7 @@ public class MarksServiceImpl implements MarksService {
 
         log.info("Marks updated: rowId={}, newMarks={}", existing.getId(), newMarks);
     }
+
 
     @Override
     public MarksResponseDTO getMarksheet(Long studentId, int semester, Pageable pageable, String requesterEmail) {
@@ -156,17 +174,21 @@ public class MarksServiceImpl implements MarksService {
             if (!Objects.equals(student.getDepartment().getId(), studentDeptId)) {
                 throw new InvalidMarksException("Students can only view marks of their own department");
             }
-        }
-        else if (role == Role.TEACHER) {
+        } else if (role == Role.TEACHER) {
             Long teacherDeptId = userService.getDepartmentIdForTeacher(requesterEmail)
                     .orElseThrow(() -> new ResourceNotFoundException("Teacher department not found"));
             if (!Objects.equals(student.getDepartment().getId(), teacherDeptId)) {
-                // Updated message to prevent subject viewing at search time
                 throw new InvalidMarksException("You are not allowed to view subjects of a different department");
             }
         }
 
-        Page<MarksDomain> pageData = marksRepository.findByStudentIdAndSemester(studentId, semester, pageable);
+        // ✅ Only fetch marks for subjects the student actually chose
+        StudentSubjectChoiceDomain choice = subjectChoiceRepository.findByStudentIdAndSemester(studentId, semester)
+                .orElseThrow(() -> new ResourceNotFoundException("Student has not chosen subjects for this semester"));
+
+        List<Long> subjectIds = choice.getSubjectIds();
+
+        Page<MarksDomain> pageData = marksRepository.findByStudentIdAndSemesterAndSubjectIds(studentId, semester, subjectIds, pageable);
         if (pageData.isEmpty()) {
             throw new ResourceNotFoundException("No marks found");
         }
@@ -187,6 +209,7 @@ public class MarksServiceImpl implements MarksService {
                 .setTotalPages(pageData.getTotalPages())
                 .setTotalElements(pageData.getTotalElements());
     }
+
 
     @Override
     public void deleteAllMarks(Long studentId, int semester, String requesterEmail) {
